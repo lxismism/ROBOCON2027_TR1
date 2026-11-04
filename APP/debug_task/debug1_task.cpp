@@ -1,0 +1,59 @@
+/**
+ * @file debug_task1.cpp
+ * @author lxlx (1729649497@qq.com)
+ * @brief APP调试层，专门用来测试程序
+ * @version 0.1
+ * @date 2026-09-06
+ * 
+ * @copyright Copyright (c) 2026
+ * 
+ */
+
+#include "debug1_task.h"
+#include "cmsis_os2.h"
+#include "memory_map.h"
+#include "double_buffer.hpp"
+#include "lockfree_queue.hpp"
+#include "UartPort.hpp"
+#include "topics.hpp"
+
+#include "Canbus.hpp"
+#include "MotorBase.hpp"
+#include "djiMotor.hpp"
+#include "dmMotor.hpp"
+#include "vescMotor.hpp"
+
+#include "com_config.h"
+#include "pid_controller.h"
+#include "topic_pool.hpp"
+#include "chassis_solution.hpp"
+#include "chassis_task.h"
+#include "math_utils.hpp"
+#include "photogate.hpp"
+#include "host_comm.hpp"
+
+#include "UsbPort.hpp"
+#include "UsbPortC.h"
+
+osThreadId_t Debug1_TaskHandle;
+
+static TypedTopicSubscriber<pub_imu_data> imu_data_sub("imu_data", 8U);
+static pub_imu_data imu_data{};
+
+static TypedTopicSubscriber<pub_vision_pose> vision_pose_sub("vision_pose", 8U);
+static pub_vision_pose vision_pose_msg{};
+
+void debug1Task(void *argument)
+{
+    TickType_t currentTime = xTaskGetTickCount();
+    
+
+    for(;;)
+    {
+        imu_data_sub.TryGet(&imu_data);
+        vision_pose_sub.TryGet(&vision_pose_msg);
+
+        vTaskDelayUntil(&currentTime, 5);
+    }
+
+}
