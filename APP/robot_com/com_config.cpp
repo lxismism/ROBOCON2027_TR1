@@ -31,6 +31,7 @@
 #include "djiMotor.hpp"
 #include "vescMotor.hpp"
 #include "dmMotor.hpp"
+#include "robstrideMotor.hpp"
 
 #include "topics.hpp"
 #include "topic_pool.hpp"
@@ -152,6 +153,14 @@ C620Motor lift_motor(&fdcan3_bus, 0x201, false, 0x200, false,
     20.0f, 0.0f, 0.0f, 6000.0f, 6000.0f,
     Derivative_On_Measurement, 1.0f);
 
+EL05Motor grip_motor1(&fdcan3_bus, 0x7F,0xFD,0.0f,0.0f,6.0f);
+EL05Motor grip_motor2(&fdcan3_bus, 0x7E, 0xFD, 0.0f, 0.01f, 6.0f);
+/*================ 灵足夹爪限位参数（每次改零点要重新测！）================*/
+static constexpr float kGrip1LimitMinDeg = -1.0f;  
+static constexpr float kGrip1LimitMaxDeg =  370.0f; 
+static constexpr float kGrip2LimitMinDeg = -3.0f;   
+static constexpr float kGrip2LimitMaxDeg =  365.0f;   
+
 /*-------------------------------------fdcan3----------------------------------------*/
 
 
@@ -231,6 +240,7 @@ uint8_t comServiceInit(){
 
     canFilterInit(&hfdcan3, FDCAN_STANDARD_ID, 0, 0, FDCAN_FILTER_TO_RXFIFO0, 0);
     canFilterInit(&hfdcan3, FDCAN_STANDARD_ID, 0, 0, FDCAN_FILTER_TO_RXFIFO1, 1);
+    canFilterInit(&hfdcan3, FDCAN_EXTENDED_ID, 0, 0, FDCAN_FILTER_TO_RXFIFO0, 0);
     bspCanInit(&hfdcan3);
 
     fdcan1_bus.init();
@@ -250,6 +260,12 @@ uint8_t comServiceInit(){
     fdcan3_bus.registerDevice(&extend_motor);
     fdcan3_bus.registerDevice(&wrist_motor);
     fdcan3_bus.registerDevice(&lift_motor);
+    fdcan3_bus.registerDevice(&grip_motor1);
+    fdcan3_bus.registerDevice(&grip_motor2);
+
+    //灵足夹爪软件限位
+    grip_motor1.setLimitDeg(kGrip1LimitMinDeg, kGrip1LimitMaxDeg);
+    grip_motor2.setLimitDeg(kGrip2LimitMinDeg, kGrip2LimitMaxDeg);
 
     uart2_rx_semaphore = osSemaphoreNew(1, 0, NULL);
     uart2_port.startRxDmaIdle();
@@ -501,6 +517,17 @@ void can2SendTask(void *argument){
 
 /*-------------------------------------fdcan3----------------------------------------*/
 
+//灵足 EL05 发帧：buildTx 返回 true 才把这一帧塞进发送队列
+static void sendEl05Frame(CanBus &bus, EL05Motor &motor){
+    CanBus::ClassicPack pack{};
+    pack.dlc  = FDCAN_DLC_BYTES_8;
+    pack.type = CanBus::Type::EXTENDED;
+    if(motor.buildTx(pack.data)){
+        pack.id = motor.getTxID();
+        bus.addCanMsg(pack);
+    }
+}
+
 void can3SendTask(void *argument){
     TickType_t current = xTaskGetTickCount();
 
@@ -533,6 +560,10 @@ void can3SendTask(void *argument){
                 fdcan3_bus.addCanMsg(pack);
             }
         }
+
+         
+        sendEl05Frame(fdcan3_bus, grip_motor1);
+        sendEl05Frame(fdcan3_bus, grip_motor2);
 
         vTaskDelayUntil(&current, 1);
         
