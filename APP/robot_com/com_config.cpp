@@ -408,9 +408,9 @@ void can1SendTask(void *argument){
             pack.dlc = FDCAN_DLC_BYTES_4;
             pack.type = CanBus::Type::EXTENDED;
 
-            chassis_drivemotor1.buildTx(pack.data);
-
-            fdcan1_bus.addCanMsg(pack);
+            if(chassis_drivemotor1.buildTx(pack.data)){
+                fdcan1_bus.addCanMsg(pack);
+            }
         }
         // vTaskDelayUntil(&current, 1);
 
@@ -422,9 +422,9 @@ void can1SendTask(void *argument){
             pack.dlc = FDCAN_DLC_BYTES_4;
             pack.type = CanBus::Type::EXTENDED;
 
-            chassis_drivemotor2.buildTx(pack.data);
-
-            fdcan1_bus.addCanMsg(pack);
+            if(chassis_drivemotor2.buildTx(pack.data)){
+                fdcan1_bus.addCanMsg(pack);
+            }
         }
         // vTaskDelayUntil(&current, 1);
 
@@ -436,9 +436,9 @@ void can1SendTask(void *argument){
             pack.dlc = FDCAN_DLC_BYTES_4;
             pack.type = CanBus::Type::EXTENDED;
 
-            chassis_drivemotor3.buildTx(pack.data);
-
-            fdcan1_bus.addCanMsg(pack);
+            if(chassis_drivemotor3.buildTx(pack.data)){
+                fdcan1_bus.addCanMsg(pack);
+            }
         }
         // vTaskDelayUntil(&current, 1);
 
@@ -450,9 +450,9 @@ void can1SendTask(void *argument){
             pack.dlc = FDCAN_DLC_BYTES_4;
             pack.type = CanBus::Type::EXTENDED;
 
-            chassis_drivemotor4.buildTx(pack.data);
-
-            fdcan1_bus.addCanMsg(pack);
+            if(chassis_drivemotor4.buildTx(pack.data)){
+                fdcan1_bus.addCanMsg(pack);
+            }
         }
 
         vTaskDelayUntil(&current, 1);
