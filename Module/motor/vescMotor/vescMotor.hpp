@@ -85,6 +85,8 @@ public:
 
     bool buildTx(uint8_t data[8]) override{
 
+        if(isOffline()) return false;
+
         int32_t command = static_cast<int32_t>(cmdTrans());
         data[0] = static_cast<uint8_t>((command >> 24) & 0xFF);
         data[1] = static_cast<uint8_t>((command >> 16) & 0xFF);
