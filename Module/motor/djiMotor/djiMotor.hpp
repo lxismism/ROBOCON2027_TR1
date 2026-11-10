@@ -88,7 +88,7 @@ public:
 
     float cmdTrans() { return cmd_; }
 
-    void update(void){
+    void computeOutput(void){
         if(!isOffline()){
             if(output_type_ == OutputType::DEGREE ) pidDegUpdate();
             if(output_type_ != OutputType::NONE) pidDegSpeedUpdate();
@@ -186,7 +186,7 @@ public:
 
     float cmdTrans() { return cmd_ * 16384.0f / 20000.0f;}
 
-    void update(void){
+    void computeOutput(void){
         if(!isOffline()){
             if(output_type_ == OutputType::DEGREE ) pidDegUpdate();
             if(output_type_ != OutputType::NONE) pidDegSpeedUpdate();

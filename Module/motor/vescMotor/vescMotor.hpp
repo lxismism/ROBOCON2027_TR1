@@ -127,7 +127,7 @@ public:
 
     float cmdTrans() { return cmd_ ; }
     
-    void update(void){
+    void computeOutput(void){
 
         switch (command_id_) {
             case CAN_PACKET_SET_CURRENT : {

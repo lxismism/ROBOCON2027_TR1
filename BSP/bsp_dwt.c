@@ -41,4 +41,4 @@ float DWT_GetDeltaT(uint32_t *cnt_last)
     float dt = (float)(cnt_now - *cnt_last) / CPU_FREQ_Hz;
     *cnt_last = cnt_now;
     return dt;
-}
+}       //单位:s

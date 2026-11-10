@@ -89,7 +89,7 @@ void osTaskInit(void)
 
     const osThreadAttr_t chassisTaskHandle_attributes = {
         .name = "chassis_TaskHandle",
-        .stack_size = 256 * 4,
+        .stack_size = 512 * 4,
         .priority = (osPriority_t)osPriorityRealtime,
     };
     Chassis_TaskHandle = osThreadNew(chassisTask, NULL, &chassisTaskHandle_attributes);

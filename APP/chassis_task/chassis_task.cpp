@@ -38,15 +38,16 @@ void chassisTask(void *argument){
     vTaskDelayUntil(&current, 500);
     for(;;)
     {
-        imu_data_sub.TryGet(&imu_data_msg);
+        (void)imu_data_sub.TryGet(&imu_data_msg);
+
         if(!SteerChassis_solver.HasHoming()){
             SteerChassis_solver.homing();
         } else{
+            SteerChassis_solver.updateChassisState(imu_data_msg);
             if(chassis_cmd_sub.TryGet(&chassis_cmd_msg)){
-                SteerChassis_solver.run(chassis_cmd_msg, imu_data_msg);
+                SteerChassis_solver.run(chassis_cmd_msg);
             }
         }
-
         
         vTaskDelayUntil(&current, 1);
     }
