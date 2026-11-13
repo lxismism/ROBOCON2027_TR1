@@ -17,6 +17,8 @@
 #include "usart.h"
 #include "fdcan.h"
 
+#include "math_utils.hpp"
+
 #include "memory_map.h"
 #include "UartPort.hpp"
 #include "WitMotionimu.hpp"
@@ -296,7 +298,7 @@ void uart2RxProcessTask(void *argument){
         }
     }
 }
-
+ 
 /*-------------------------------------usart2----------------------------------------*/
 
 /*-------------------------------------usart3----------------------------------------*/
@@ -317,6 +319,9 @@ void uart3RxProcessTask(void *argument){
         while(uart3_port.Read(packet)){
             for(uint8_t i = 0; i < packet.len; ++i){
                 if(rm_pocket.processByte(packet.data[i])){
+
+                    
+
                     const auto &rc_data = rm_pocket.getRCState();
                     rc_data_msg.joyRHori = rc_data.joyRHori;
                     rc_data_msg.joyRVert = rc_data.joyRVert;
@@ -327,6 +332,7 @@ void uart3RxProcessTask(void *argument){
                     rc_data_msg.swB = rc_data.swB;
                     rc_data_msg.swC = rc_data.swC;
                     rc_data_msg.swD = rc_data.swD;
+                    rc_data_msg.last_swE = rc_data_msg.swE;
                     rc_data_msg.swE = rc_data.swE;
                     rc_data_msg.pot = rc_data.pot;
 

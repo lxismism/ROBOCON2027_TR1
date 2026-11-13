@@ -53,7 +53,13 @@ struct Velocity_t{
 struct ChassisPose{
     float x;
     float y;
-    float face;
+    float yaw_deg;
+};
+
+struct ChassisTwist{
+    float vx;
+    float vy;
+    float deg_omega;
 };
 
 class SteerWheel{
@@ -76,129 +82,10 @@ public:
         homing_way_ = homing_way;
         edge_at_zero_ = edge_at_zero;
     }
-
-    /**
-     * @brief Set the Velocity object,update state before use, unless current_celocity won't update
-     * 
-     * @param target_velocity 
-     */
-    void setVelocity(Velocity_t target_velocity){
-
-        float deg_output = 0.0f;        //由于电机位置环的输入是累计的绝对角度，所以此处也必须用舵轮的累计角度计算，输入和输出必须匹配
-        float degspeed_output = 0.0f;
-        float diff = target_velocity.dir_deg - current_velocity_.dir_deg;
-
-
-        if(diff > 90.0f){
-            if(diff > 270.0f){
-                target_velocity.dir_deg -= 360.0f;
-
-            } else{
-                target_velocity.dir_deg -= 180.0f;
-                target_velocity.speed = -target_velocity.speed;
-            }
-        }
-        else if(diff < -90.0f){
-            if(diff < -270.0f){
-                target_velocity.dir_deg += 360.0f;
-                
-            } else{
-                target_velocity.dir_deg += 180.0f;
-                target_velocity.speed = -target_velocity.speed;
-            }
-        }
-        diff = target_velocity.dir_deg - current_velocity_.dir_deg;
-        
-
-        deg_output = (wheel_sum_deg_ + diff) * kWheelDirReduction;
-        degspeed_output = (target_velocity.speed) * RAD_2_DEG * kWheelDriveReduction / kWheelRadmeter; 
-
-        dirmotor_->setMotorDeg(deg_output);
-
-        const float steer_err = deg_output - dirmotor_->getSumDeg();
-        const float drive_scale = std::fmaxf(0.0f, std::cos(steer_err * DEG_2_RAD));
-        drivemotor_->setMotorDegSpeed(degspeed_output * drive_scale);
-
-    }
-
-    void homing(void){
-        if(hashoming_ || dirmotor_->isOffline()) return;
-
-        ramp_deg_homing_ += (map_[homing_way_] * deg_homing_speed_);
-        dirmotor_->setMotorDeg(ramp_deg_homing_);
-        photogate_->update();
-        
-        switch (homing_state_) {
-            case HomingState::Find_First_Zero :{
-                if(photogate_->hasRisingEdge()){
-                    first_zero_ = dirmotor_->getSumDeg() - edge_at_zero_[homing_way_];
-                    homing_state_ = HomingState::Find_Second_Zero;
-                } 
-                else if(photogate_->hasFallingEdge()){
-                    first_zero_ = dirmotor_->getSumDeg() - edge_at_zero_[homing_way_^1];        //^1的作用：0变1,1变0，在此处是为了切换数组变量，这种方式优雅一点
-                    homing_state_ = HomingState::Find_Second_Zero;
-                }
-            }; break;
-
-            case HomingState::Find_Second_Zero :{
-                if(photogate_->hasRisingEdge()){
-                    second_zero_ = dirmotor_->getSumDeg() - edge_at_zero_[homing_way_];
-                    if(std::fabs(second_zero_ - first_zero_) > 170.0f){
-                        homing_state_ = HomingState::Find_Third_Zero;
-                    }       //这个判断是为了防止光电门在边沿附近抖动导致误触发判断，需要超过170度才能保证，它经过的边沿跟第一次经过的不是同一个，不然没意义啊。
-                }
-                else if(photogate_->hasFallingEdge()){
-                    second_zero_ = dirmotor_->getSumDeg() - edge_at_zero_[homing_way_^1];
-                    if(std::fabs(second_zero_ - first_zero_) > 170.0f){
-                        homing_state_ = HomingState::Find_Third_Zero;
-                    }       
-                }
-                
-
-            }; break;
-
-            case HomingState::Find_Third_Zero :{
-                if(photogate_->hasRisingEdge()){
-                    third_zero_ = dirmotor_->getSumDeg() - edge_at_zero_[homing_way_];
-                    if(std::fabs(third_zero_ - second_zero_) > 170.0f){
-                        homing_state_ = HomingState::Check;
-                    }       //这个判断是为了防止光电门在边沿附近抖动导致误触发判断，需要超过170度才能保证，它经过的边沿跟第一次经过的不是同一次，不然没意义啊。
-                }
-                else if(photogate_->hasFallingEdge()){
-                    third_zero_ = dirmotor_->getSumDeg() - edge_at_zero_[homing_way_^1];
-                    if(std::fabs(third_zero_ - second_zero_) > 170.0f){
-                        homing_state_ = HomingState::Check;
-                    }       
-                }
-                
-            }; break;
-
-            case HomingState::Check :{
-                const float first_offset_ = math_utils::WrapAngle(first_zero_, -180.0f, 180.0f);
-                const float second_offset_ = math_utils::WrapAngle(second_zero_, -180.0f, 180.0f);
-                const float third_offset_ = math_utils::WrapAngle(third_zero_, -180.0f, 180.0f);
-
-                if(std::fabs(first_offset_ - second_offset_) < 5.0f &&
-                   std::fabs(second_offset_ - third_offset_) < 5.0f){
-                    deg_offset_ = (first_offset_ + second_offset_ + third_offset_) / 3.0f;
-                    homing_state_ = HomingState::Finish;
-                } else {
-                    homing_state_ = HomingState::Find_First_Zero;
-                }
-            }; break;
-
-            case HomingState::Finish :{
-                hashoming_ = true;
-            }; break;
-
-        }
-        
-    }
-
+    void setVelocity(Velocity_t target_velocity);
+    void homing(void);
     bool IsReady(void) { return hashoming_; }
-
     Velocity_t getVelocity(){ return current_velocity_; }
-
     void updateWheelState(){
         updateDirDeg();
         updateSpeed();        
@@ -268,7 +155,7 @@ public:
         }
     }
 
-    void run(const pub_chassis_cmd &cmd);
+    void run(const ChassisTwist &cmd);
 
     void homing(void){
         for(uint8_t i = 0; i < kWheelNum; ++i){
@@ -297,6 +184,10 @@ public:
         ForWardKine(imu_data);
     }
 
+    ChassisPose getChassisPose(){ return cur_world_pose_; }
+
+
+
 private:
 
 
@@ -310,13 +201,20 @@ private:
     static constexpr float ky3 = 0.215f;  //ky的含义是，点到x轴的距离
     static constexpr float kx3 = 0.2675f; //kx的含义是，点到y轴的距离
 
+    static constexpr float kWheelsRestDeg[kWheelNum]{
+        std::atan2(kx0, -ky0) * RAD_2_DEG,
+        std::atan2(-kx1, -ky1) * RAD_2_DEG,
+        std::atan2(-kx2, ky2) * RAD_2_DEG,
+        std::atan2(kx3, ky3) * RAD_2_DEG
+    };
+
     static constexpr std::array<float, 4> kDriveSign{1.0f, -1.0f, 1.0f, -1.0f}; //由于机械安装问题，每个轮子正转方向可能不一样，这个符号表以测试结果为准
 
     static constexpr float kWheelMaxSpeed = 2.5f;   //最大轮速，这个跟限制底盘最大移动速度不是一回事，它是为了避免解算时算出的单个轮子速度超过电机物理极限设计的
 
     SteerWheel steerwheels_[kWheelNum]{};
     Velocity_t velocitys_[kWheelNum]{};
-    pub_chassis_cmd chassis_actual_twist_{};
+    ChassisTwist chassis_actual_twist_{};
 
     ChassisPose cur_world_pose_{};
     ChassisPose chassis_target_pose_{};
@@ -359,7 +257,7 @@ private:
     void resetPose(){
         cur_world_pose_.x = 0.0f;
         cur_world_pose_.y = 0.0f;
-        cur_world_pose_.face = 0.0f;
+        cur_world_pose_.yaw_deg = 0.0f;
         DWT_cnt_ = 0U;
     }
 

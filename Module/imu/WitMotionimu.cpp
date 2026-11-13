@@ -1,0 +1,99 @@
+/**
+ * @file WitMotionimu.cpp
+ * @author lxlx (1729649497@qq.com)
+ * @brief 
+ * @version 0.1
+ * @date 2026-11-13
+ * 
+ * @copyright Copyright (c) 2026
+ * 
+ */
+
+#include "WitMotionimu.hpp"
+
+#include "math_utils.hpp"
+
+
+uint8_t WitMotionimu::processByte(uint8_t byte){
+
+    switch (state_) {
+        case rx_state_Witimu_t::WAIT_HEADER : {
+            if(byte == 0x55){
+                rx_buf_[0] = byte;
+                rx_idx_++;
+                state_ = rx_state_Witimu_t::WAIT_TYPE;
+            }
+        } break;
+
+        case rx_state_Witimu_t::WAIT_TYPE : {
+            if(byte == 0x53){
+                rx_buf_[1] = byte;
+                rx_idx_++;
+                state_ = rx_state_Witimu_t::WAIT_DATA;
+            } else {
+                resetState();
+            }
+
+        } break;
+
+        case rx_state_Witimu_t::WAIT_DATA : {
+            rx_buf_[rx_idx_] = byte;
+            rx_idx_++;
+            if(rx_idx_ >= (kRxBufLen - 1U)){
+                state_ = rx_state_Witimu_t::WAIT_SUM;
+            }
+        } break;
+
+        case rx_state_Witimu_t::WAIT_SUM : {
+            uint8_t rx_sum = calculateSum(rx_buf_);
+            resetState();
+            if(rx_sum == byte){
+                rx_buf_[10] = byte;
+                
+                int16_t raw_roll = static_cast<int16_t>(
+                    (static_cast<uint16_t>(rx_buf_[3]) << 8) | 
+                    static_cast<uint16_t>(rx_buf_[2]));
+
+                int16_t raw_pitch = static_cast<int16_t>(
+                    (static_cast<uint16_t>(rx_buf_[5]) << 8) | 
+                    static_cast<uint16_t>(rx_buf_[4]));
+
+                int16_t raw_yaw = static_cast<int16_t>(
+                    (static_cast<uint16_t>(rx_buf_[7]) << 8) | 
+                    static_cast<uint16_t>(rx_buf_[6]));
+
+                //data[8]~data[9]是版本号,data[10]是校验和
+
+                if(!is_inited_){
+                    offset_.roll_deg = static_cast<float>(raw_roll) * 180.0f / 32768.0f;
+                    offset_.pitch_deg = static_cast<float>(raw_pitch) * 180.0f / 32768.0f;
+                    offset_.yaw_deg = static_cast<float>(raw_yaw) * 180.0f / 32768.0f;
+                    is_inited_ = true;
+                }
+
+                const pub_imu_data actual_data{
+                    static_cast<float>(raw_roll) * 180.0f / 32768.0f - offset_.roll_deg,
+                    static_cast<float>(raw_pitch) * 180.0f / 32768.0f - offset_.pitch_deg,
+                    static_cast<float>(raw_yaw) * 180.0f / 32768.0f - offset_.yaw_deg
+                };
+
+                newest_data_.roll_deg = math_utils::WrapAngle(actual_data.roll_deg, -180.0f,180.0f);
+                newest_data_.pitch_deg = math_utils::WrapAngle(actual_data.pitch_deg, -180.0f, 180.0f);
+                newest_data_.yaw_deg = math_utils::WrapAngle(actual_data.yaw_deg, -180.0f, 180.0f);
+
+                    
+                return 0x53;
+            } 
+
+        } break;
+
+        default: {
+            resetState();
+        }
+    }
+    
+    return 0U;
+
+}
+
+

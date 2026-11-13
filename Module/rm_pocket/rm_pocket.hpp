@@ -55,24 +55,24 @@ class RmPocket{
     };
 
     struct RC_State_t{
-      uint16_t joyRHori;      //CH0
-      uint16_t joyRVert;      //CH1
-      uint16_t joyLVert;      //CH2
-      uint16_t joyLHori;      //CH3
+        uint16_t joyRHori;      //CH0
+        uint16_t joyRVert;      //CH1
+        uint16_t joyLVert;      //CH2
+        uint16_t joyLHori;      //CH3
 
-      RC_2_Pos_SW_State_t swA;      //CH4
-      RC_3_Pos_SW_State_t swB;      //CH5
-      RC_3_Pos_SW_State_t swC;      //CH6
-      RC_2_Pos_SW_State_t swD;      //CH7
-      RC_BTN_SW_State_t swE;      //CH8
-      uint16_t pot;      //CH9 手柄背后的那个电位器
+        RC_2_Pos_SW_State_t swA;      //CH4
+        RC_3_Pos_SW_State_t swB;      //CH5
+        RC_3_Pos_SW_State_t swC;      //CH6
+        RC_2_Pos_SW_State_t swD;      //CH7
+        RC_BTN_SW_State_t swE;      //CH8
+        uint16_t pot;      //CH9 手柄背后的那个电位器
 
-      uint16_t channel_11;      //CH10
-      uint16_t channel_12;      //CH11
-      uint16_t channel_13;      //CH12
-      uint16_t channel_14;      //CH13
-      uint16_t channel_15;      //CH14
-      uint16_t channel_16;      //CH15
+        uint16_t channel_11;      //CH10
+        uint16_t channel_12;      //CH11
+        uint16_t channel_13;      //CH12
+        uint16_t channel_14;      //CH13
+        uint16_t channel_15;      //CH14
+        uint16_t channel_16;      //CH15
     };  //size:28byte
 
 public:
