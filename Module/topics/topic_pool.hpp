@@ -88,4 +88,3 @@ struct pub_vision_pose{
   uint32_t timestamp_ms;
 };
 
-#pragma pack()

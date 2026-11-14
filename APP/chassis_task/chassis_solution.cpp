@@ -156,9 +156,9 @@ void SteerChassis::run(const ChassisTwist &twist){
     const float vy = -twist.vx * std::sin(yaw) + twist.vy * std::cos(yaw);
     const float omega = twist.deg_omega * DEG_2_RAD; 
 
-    if(std::fabs(vx) < 0.0001f &&
-       std::fabs(vy) < 0.0001f &&
-       std::fabs(omega) < 0.0001f){
+    if(std::fabs(vx) < 0.01f &&
+       std::fabs(vy) < 0.01f &&
+       std::fabs(omega) < 0.01f){
 
         velocitys_[0].speed = 0.0f;
         velocitys_[1].speed = 0.0f;

@@ -63,7 +63,7 @@ void chassisTask(void *argument){
             chassis_FK_pose_msg.yaw_deg = SteerChassis_solver.getChassisPose().yaw_deg;
             chassis_FK_pose_pub.Publish(chassis_FK_pose_msg);
 
-            if(chassis_cmd_sub.TryGet(&chassis_cmd_msg)){
+            if(chassis_cmd_sub.TryGet(&chassis_cmd_msg)){       //ozone调试自动时注释此行
                 switch (chassis_cmd_msg.cmd_type) {
 
                     case ControlMode::AUTOMATIC     :{
@@ -74,7 +74,7 @@ void chassisTask(void *argument){
                     } break;
 
                 }
-            }
+            }           //ozone调试自动时注释此行
 
         }
 
