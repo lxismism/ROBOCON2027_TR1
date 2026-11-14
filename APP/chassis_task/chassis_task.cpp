@@ -36,10 +36,10 @@ static pub_chassis_cmd chassis_cmd_msg{};
 static TypedTopicSubscriber<pub_imu_data> imu_data_sub("imu_data", 8U);
 static pub_imu_data imu_data_msg{};
 
-PID_t pid_x_pos{.Kp = 1.5f, .Ki = 0.5f, .Kd = 0.02f, 
-    .IntegralLimit = 0.5f, .Maxout = 0.5f, .DeadBand = 0.01f, .Improve = Derivative_On_Measurement};
-PID_t pid_y_pos{.Kp = 1.5f, .Ki = 0.5f, .Kd = 0.02f, 
-    .IntegralLimit = 0.5f, .Maxout = 0.5f, .DeadBand = 0.01f, .Improve = Derivative_On_Measurement};
+PID_t pid_x_pos{.Kp = 6.5f, .Ki = 2.5f, .Kd = 0.02f, 
+    .IntegralLimit = 1.5f, .Maxout = 1.5f, .DeadBand = 0.01f, .Improve = Derivative_On_Measurement};
+PID_t pid_y_pos{.Kp = 6.5f, .Ki = 2.5f, .Kd = 0.02f, 
+    .IntegralLimit = 1.5f, .Maxout = 1.5f, .DeadBand = 0.01f, .Improve = Derivative_On_Measurement};
 PID_t pid_deg_pos{.Kp = 25.5f, .Ki = 10.1f, .Kd = 3.5f, 
     .IntegralLimit = 360.0f, .Maxout = 360.0f, .DeadBand = 0.01f, .Improve = Derivative_On_Measurement};
 
