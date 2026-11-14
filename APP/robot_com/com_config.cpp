@@ -31,6 +31,8 @@
 #include "djiMotor.hpp"
 #include "vescMotor.hpp"
 #include "dmMotor.hpp"
+#include "hightorqueMotor.hpp"   /* 高擎关节模组：8 字节经典帧 */
+#include "htDebug.hpp"           /* CanTraceDevice + HtCmdParser */
 
 #include "topics.hpp"
 #include "topic_pool.hpp"
@@ -152,6 +154,18 @@ C620Motor lift_motor(&fdcan3_bus, 0x201, false, 0x200, false,
     20.0f, 0.0f, 0.0f, 6000.0f, 6000.0f,
     Derivative_On_Measurement, 1.0f);
 
+/* ---------------- 高擎关节模组：与 C610/C620/DM4310 共用 fdcan3 ----------------
+ * 控制帧是标准帧 0x001，读状态帧是扩展帧 0x8001，均为 8 字节经典帧。
+ * 与测试版完全一致的对象定义，debug1Task 通过 extern 取用。 */
+HightorqueMotor high_torque_motor(&fdcan3_bus, 1);
+
+/* fdcan3 总线只读快照，供 debug1Task 每 500ms 打印；不参与任何控制 */
+CanTraceDevice fdcan3_trace(&fdcan3_bus);
+
+/* 串口命令 → debug1Task：m<度/秒> / p<度> / x / z / w */
+volatile float   ht_target_deg_s = 0.0f;
+volatile float   ht_target_deg   = 0.0f;
+volatile uint8_t ht_cmd_ack      = 0U;   /* 1=速度 2=位置 3=停 4=非法 5=回零 6=保存 */
 /*-------------------------------------fdcan3----------------------------------------*/
 
 
@@ -198,6 +212,85 @@ static pub_rc_data rc_data_msg{};
 /*-------------------------------------usart3----------------------------------------*/
 
 
+/*--------------------------uart4：高擎电机调试/命令串口------------------------------
+ * TR1 的 USART3 是遥控器专口（420000 波特），不能照搬测试版「USART3 @115200」的接法。
+ * UART4（PA0/PA1）本来就是 printf 口，115200、RX 空闲且 CubeMX 已配好 DMA+IDLE 中断，
+ * 因此 m120 / p120 / x / z / w 命令走 UART4；USART3 也保留兼容解析（见 uart3RxProcessTask，
+ * 需把串口助手设成 420000），两个口都可用，不必改动 Core/ 下的 CubeMX 生成文件。
+ */
+void onUart4RxCb(const uint8_t *data, size_t len, void *user);
+
+DMA_BUFFER_ATTR static uint8_t uart4_rx_dma[64];
+static UartPort uart4_port(&huart4, uart4_rx_dma, sizeof(uart4_rx_dma),
+                           nullptr, 0, onUart4RxCb, nullptr);
+
+/* 遥控数据是二进制流：只有整段都是 ASCII 命令字符的帧才喂给 USART3 的解析器；
+   USART3 侧只接受需要回车的 m/p，避免 'x'/'z'/'w' 这类单字节命令被遥控字节
+   误触发（w 还会把零点写进 flash）。UART4 是干净的专用口，不需要这个门。 */
+static bool htCmdSpanClean(const uint8_t *data, size_t len)
+{
+    for(size_t i = 0; i < len; ++i){
+        const uint8_t b = data[i];
+        const bool ok = (b == '\r') || (b == '\n') || (b == '-') || (b == '+') ||
+                        ((b >= '0') && (b <= '9')) ||
+                        (b == 'm') || (b == 'M') || (b == 'p') || (b == 'P') ||
+                        (b == 'x') || (b == 'X') || (b == 'z') || (b == 'Z') ||
+                        (b == 'w') || (b == 'W');
+        if(!ok){
+            return false;
+        }
+    }
+    return true;
+}
+
+/* 解析结果写进与 debug1Task 约定的三个全局变量 */
+static void htCmdApply(HtCmdParser::Kind k, float value, bool allow_single)
+{
+    switch(k){
+        case HtCmdParser::Kind::SPEED:
+            ht_target_deg_s = value;
+            ht_cmd_ack = 1U;
+            break;
+        case HtCmdParser::Kind::POS:
+            ht_target_deg = value;
+            ht_cmd_ack = 2U;
+            break;
+        case HtCmdParser::Kind::STOP:
+            if(allow_single){ ht_target_deg_s = 0.0f; ht_cmd_ack = 3U; }
+            break;
+        case HtCmdParser::Kind::REZERO:
+            if(allow_single){ ht_cmd_ack = 5U; }
+            break;
+        case HtCmdParser::Kind::CONFW:
+            if(allow_single){ ht_cmd_ack = 6U; }
+            break;
+        case HtCmdParser::Kind::BAD:
+            if(allow_single){ ht_cmd_ack = 4U; }
+            break;
+        default:
+            break;
+    }
+}
+
+static HtCmdParser ht_uart3_cmd_parser{};   /* USART3@420000：只接受 m/p 整条命令 */
+static HtCmdParser ht_uart4_cmd_parser{};   /* UART4@115200：全部命令 */
+
+/* 回调在 UART4 的 IDLE/DMA 中断里执行，只写 volatile 全局变量，不调 RTOS API */
+void onUart4RxCb(const uint8_t *data, size_t len, void *user)
+{
+    (void)user;
+    if((data == nullptr) || (len == 0U)){
+        return;
+    }
+    for(size_t i = 0; i < len; ++i){
+        float value = 0.0f;
+        const HtCmdParser::Kind k = ht_uart4_cmd_parser.feed(data[i], value);
+        htCmdApply(k, value, true);
+    }
+}
+/*-------------------------------------uart4------------------------------------------*/
+
+
 /*--------------------------------------usb------------------------------------------*/
 
 osThreadId_t usbProcess_TaskHandle;
@@ -231,6 +324,9 @@ uint8_t comServiceInit(){
 
     canFilterInit(&hfdcan3, FDCAN_STANDARD_ID, 0, 0, FDCAN_FILTER_TO_RXFIFO0, 0);
     canFilterInit(&hfdcan3, FDCAN_STANDARD_ID, 0, 0, FDCAN_FILTER_TO_RXFIFO1, 1);
+    /* 高擎读状态帧是扩展帧 0x8001，回包也可能走扩展帧。原来只配了标准帧滤波器，
+       扩展帧会被全局过滤器直接丢掉。ExtFiltersNbr=2、索引 0 空闲，补一条全通。 */
+    canFilterInit(&hfdcan3, FDCAN_EXTENDED_ID, 0, 0, FDCAN_FILTER_TO_RXFIFO0, 0);
     bspCanInit(&hfdcan3);
 
     fdcan1_bus.init();
@@ -250,12 +346,27 @@ uint8_t comServiceInit(){
     fdcan3_bus.registerDevice(&extend_motor);
     fdcan3_bus.registerDevice(&wrist_motor);
     fdcan3_bus.registerDevice(&lift_motor);
+    fdcan3_bus.registerDevice(&high_torque_motor);
+    fdcan3_bus.registerDevice(&fdcan3_trace);   /* 只读快照，不参与控制 */
 
     uart2_rx_semaphore = osSemaphoreNew(1, 0, NULL);
     uart2_port.startRxDmaIdle();
 
     uart3_rx_semaphore = osSemaphoreNew(1, 0, NULL);
     uart3_port.startRxDmaIdle();
+
+    /* UART4_RX(PA1) 没接串口助手时会悬空，噪声可能被解析成 x/z/w 命令
+       （w 还会写 flash）。CubeMX 配的是 NOPULL，这里只把 PA1 改成内部上拉。 */
+    {
+        GPIO_InitTypeDef ht_rx_gpio = {0};
+        ht_rx_gpio.Pin       = GPIO_PIN_1;
+        ht_rx_gpio.Mode      = GPIO_MODE_AF_PP;
+        ht_rx_gpio.Pull      = GPIO_PULLUP;
+        ht_rx_gpio.Speed     = GPIO_SPEED_FREQ_LOW;
+        ht_rx_gpio.Alternate = GPIO_AF8_UART4;
+        HAL_GPIO_Init(GPIOA, &ht_rx_gpio);
+    }
+    uart4_port.startRxDmaIdle();    /* 高擎命令口：回调里直接解析，无需额外任务 */
 
     usb_semaphore = osSemaphoreNew(1, 0, NULL);
     UsbPort::Instance().init(onUsbCb, nullptr);
@@ -315,6 +426,21 @@ void uart3RxProcessTask(void *argument){
         
         UartPort::Packet packet{};
         while(uart3_port.Read(packet)){
+            /* 兼容测试版接线：USART3 上也能发 m120 / p120（此处波特率 420000）。
+               只有「整段都是命令字符」的帧才喂解析器；遥控二进制帧不喂，并用
+               非法字节把可能残留的半截命令作废。allow_single=false 表示这里只
+               认需要回车的 m/p，单字节 x/z/w 不会被遥控数据误触发。UART4 是推荐口。 */
+            if(htCmdSpanClean(packet.data, packet.len)){
+                for(uint16_t i = 0; i < packet.len; ++i){
+                    float value = 0.0f;
+                    const HtCmdParser::Kind k =
+                        ht_uart3_cmd_parser.feed(packet.data[i], value);
+                    htCmdApply(k, value, false);
+                }
+            }else{
+                float dummy = 0.0f;
+                ht_uart3_cmd_parser.feed(0U, dummy);   /* 清空半截命令 */
+            }
             for(uint8_t i = 0; i < packet.len; ++i){
                 if(rm_pocket.processByte(packet.data[i])){
                     const auto &rc_data = rm_pocket.getRCState();
@@ -503,6 +629,7 @@ void can2SendTask(void *argument){
 
 void can3SendTask(void *argument){
     TickType_t current = xTaskGetTickCount();
+    uint8_t ht_div = 0U;   /* 本任务 1ms 一拍，高擎按测试版 5ms 一拍做 5 分频 */
 
     for(;;){
 
@@ -531,6 +658,25 @@ void can3SendTask(void *argument){
             pack.type = CanBus::Type::STANDARD;
             if(wrist_motor.buildTx(pack.data)){
                 fdcan3_bus.addCanMsg(pack);
+            }
+        }
+
+        /* 高擎关节电机：8 字节经典帧，帧 ID / 帧类型由驱动决定
+           （控制帧标准帧 0x001，读状态帧扩展帧 0x8001 —— 后者电机才回包）。
+           测试版 can3SendTask 是 5ms 一拍，read/service 序列的 tick 计数都按
+           5ms 设计，这里 5 分频保持完全相同的帧调度，也不给总线加负担。 */
+        if(++ht_div >= 5U){
+            ht_div = 0U;
+            high_torque_motor.update();
+
+            CanBus::ClassicPack pack{};
+            pack.dlc = FDCAN_DLC_BYTES_8;
+            if(high_torque_motor.buildTx(pack.data)){
+                pack.id   = high_torque_motor.getFrameID();
+                pack.type = high_torque_motor.getFrameType();
+                if(fdcan3_bus.addCanMsg(pack) != CanBus::CanError::OK){
+                    high_torque_motor.notifyTxFail();   /* 队列满 = 帧没发出去 */
+                }
             }
         }
 
