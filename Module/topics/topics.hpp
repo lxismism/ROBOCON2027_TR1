@@ -19,7 +19,7 @@
 
 //最大消息结构体字节数
 #ifndef TOPICS_MAX_MESSAGE_SIZE
-#define TOPICS_MAX_MESSAGE_SIZE 32U
+#define TOPICS_MAX_MESSAGE_SIZE 64U
 #endif
 
 //最大历史长度（订阅者缓冲队列最大长度）
@@ -29,7 +29,7 @@
 
 //最大topic数量
 #ifndef TOPICS_MAX_TOPICS
-#define TOPICS_MAX_TOPICS 8U
+#define TOPICS_MAX_TOPICS 10U
 #endif
 
 //某个topics上能搭载的最大订阅

@@ -44,14 +44,7 @@ void debug2Task(void *argument){
     TickType_t currentTime = xTaskGetTickCount();
 
     for(;;){
-        
-        chassis_photogate4.update();
-        if(chassis_photogate4.hasRisingEdge()){
-            rising++;
-        }
-        else if(chassis_photogate4.hasFallingEdge()){
-            falling++;
-        }
+
 
         vTaskDelayUntil(&currentTime, 20);
     }

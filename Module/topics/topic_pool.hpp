@@ -15,14 +15,39 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#pragma pack(1)
-
+enum class ControlMode : uint8_t {
+  PURELY_MANUAL = 0,  //x方向速度， y方向速度， 目标yaw
+  AUTOMATIC,  //x坐标， y坐标， 目标yaw
+};
 
 
 struct pub_chassis_cmd{
-    float linear_x_;
-    float linear_y_;
-    float deg_omega_;
+  /**
+  * @brief 
+
+    PURELY_MANUAL:
+      x_tar:vx
+      y_tar:vy
+      yaw_deg: yaw_deg
+    
+    AUTOMATIC:
+      x_tar:x_tar_pos
+      y_tar:y_tar_pos
+      yaw_deg: yaw_target_deg
+  * 
+  */
+
+  ControlMode cmd_type;
+  float x_tar;
+  float y_tar;
+  float yaw_deg;
+  
+};
+
+struct pub_chassis_FK_pose{
+  float x;
+  float y;
+  float yaw_deg;
 };
 
 struct pub_imu_data{
@@ -50,7 +75,11 @@ struct pub_rc_data{
   uint16_t channel_14;      //CH14
   uint16_t channel_15;      //CH15
   uint16_t channel_16;      //CH16
-};  //size:28byte
+
+  RC_BTN_SW_State_t last_swE;
+
+
+};  //size:30byte
 
 struct pub_vision_pose{
   float x;
@@ -59,4 +88,3 @@ struct pub_vision_pose{
   uint32_t timestamp_ms;
 };
 
-#pragma pack()

@@ -17,6 +17,8 @@
 #include "usart.h"
 #include "fdcan.h"
 
+#include "math_utils.hpp"
+
 #include "memory_map.h"
 #include "UartPort.hpp"
 #include "WitMotionimu.hpp"
@@ -296,7 +298,7 @@ void uart2RxProcessTask(void *argument){
         }
     }
 }
-
+ 
 /*-------------------------------------usart2----------------------------------------*/
 
 /*-------------------------------------usart3----------------------------------------*/
@@ -317,6 +319,9 @@ void uart3RxProcessTask(void *argument){
         while(uart3_port.Read(packet)){
             for(uint8_t i = 0; i < packet.len; ++i){
                 if(rm_pocket.processByte(packet.data[i])){
+
+                    
+
                     const auto &rc_data = rm_pocket.getRCState();
                     rc_data_msg.joyRHori = rc_data.joyRHori;
                     rc_data_msg.joyRVert = rc_data.joyRVert;
@@ -327,6 +332,7 @@ void uart3RxProcessTask(void *argument){
                     rc_data_msg.swB = rc_data.swB;
                     rc_data_msg.swC = rc_data.swC;
                     rc_data_msg.swD = rc_data.swD;
+                    rc_data_msg.last_swE = rc_data_msg.swE;
                     rc_data_msg.swE = rc_data.swE;
                     rc_data_msg.pot = rc_data.pot;
 
@@ -401,7 +407,7 @@ void can1SendTask(void *argument){
     for(;;){        
 
         {
-            chassis_drivemotor1.update();
+            chassis_drivemotor1.computeOutput();
             CanBus::ClassicPack pack = {};  
             pack.id = (chassis_drivemotor1.getCommandID() << 8) |
                 (chassis_drivemotor1.getID() & 0xFFU);      
@@ -415,7 +421,7 @@ void can1SendTask(void *argument){
         // vTaskDelayUntil(&current, 1);
 
         {
-            chassis_drivemotor2.update();
+            chassis_drivemotor2.computeOutput();
             CanBus::ClassicPack pack = {};  
             pack.id = (chassis_drivemotor2.getCommandID() << 8) |
                 (chassis_drivemotor2.getID() & 0xFFU);      
@@ -429,7 +435,7 @@ void can1SendTask(void *argument){
         // vTaskDelayUntil(&current, 1);
 
         {
-            chassis_drivemotor3.update();
+            chassis_drivemotor3.computeOutput();
             CanBus::ClassicPack pack = {};  
             pack.id = (chassis_drivemotor3.getCommandID() << 8) |
                 (chassis_drivemotor3.getID() & 0xFFU);      
@@ -443,7 +449,7 @@ void can1SendTask(void *argument){
         // vTaskDelayUntil(&current, 1);
 
         {
-            chassis_drivemotor4.update();
+            chassis_drivemotor4.computeOutput();
             CanBus::ClassicPack pack = {};  
             pack.id = (chassis_drivemotor4.getCommandID() << 8) |
                 (chassis_drivemotor4.getID() & 0xFFU);      
@@ -468,10 +474,10 @@ void can2SendTask(void *argument){
 
     for(;;){     
         
-        chassis_dirmotor1.update();
-        chassis_dirmotor2.update();
-        chassis_dirmotor3.update();
-        chassis_dirmotor4.update();
+        chassis_dirmotor1.computeOutput();
+        chassis_dirmotor2.computeOutput();
+        chassis_dirmotor3.computeOutput();
+        chassis_dirmotor4.computeOutput();
 
         uint8_t data[8] = {0};
         CanBus::ClassicPack pack = {};
@@ -507,8 +513,8 @@ void can3SendTask(void *argument){
     for(;;){
 
         {   
-            extend_motor.update();
-            lift_motor.update();
+            extend_motor.computeOutput();
+            lift_motor.computeOutput();
 
             uint8_t data[8]{};
             uint32_t motor_ids[4] = {0x201, 0x202, 0, 0};
