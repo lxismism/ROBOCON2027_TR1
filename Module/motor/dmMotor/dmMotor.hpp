@@ -30,7 +30,6 @@ public:
 
                 reduction_ratio_ = reduction;
                 max_cmd_ = max_cmd;
-                output_type_ = OutputType::NONE;
                 control_mode_ = control_mode;
 
                 switch (control_mode) {

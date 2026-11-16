@@ -63,11 +63,11 @@ void SteerWheel::setVelocity(Velocity_t target_velocity){
     deg_output = (wheel_sum_deg_ + diff) * kWheelDirReduction;
     degspeed_output = (target_velocity.speed) * kRadToDeg * kWheelDriveReduction / kWheelRadmeter; 
 
-    dirmotor_->setMotorDeg(deg_output);
+    dirmotor_->setDeg(deg_output);
 
     const float steer_err = deg_output - dirmotor_->getSumDeg();
     const float drive_scale = std::fmaxf(0.0f, std::cos(steer_err * kDegToRad));
-    drivemotor_->setMotorDegSpeed(degspeed_output * drive_scale);
+    drivemotor_->setDegSpeed(degspeed_output * drive_scale);
 
 }
 
@@ -79,7 +79,7 @@ void SteerWheel::homing(void){
     if(hashoming_ || dirmotor_->isOffline()) return;
 
     ramp_deg_homing_ += (map_[homing_way_] * deg_homing_speed_);
-    dirmotor_->setMotorDeg(ramp_deg_homing_);
+    dirmotor_->setDeg(ramp_deg_homing_);
     photogate_->update();
     
     switch (homing_state_) {

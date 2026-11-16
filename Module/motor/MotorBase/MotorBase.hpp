@@ -14,14 +14,17 @@
 #include "Canbus.hpp"
 #include "pid_controller.h"
 #include "math_utils.hpp"
+#include "ramp_planner.hpp"
 
 class MotorBase{
+
+enum class OutputType : uint8_t { NONE = 0, SPEED, DEGREE, DEG_WITH_SPEED, MIT};
+
+
 public:
     MotorBase() = default;
 
-    enum class OutputType : uint8_t { NONE = 0, SPEED, DEGREE};
-
-    void setMotorCmd(float cmd){
+    void setCmd(float cmd){
         if(cmd > max_cmd_){
             cmd = max_cmd_;
         }
@@ -31,28 +34,45 @@ public:
         cmd_ = cmd;
     }
     
-    void setMotorDegSpeed(float deg_speed) { ref_deg_speed_ = deg_speed; }
-    void setMotorDeg(float deg) { ref_deg_ = deg; }
-
-
-
-    void pidDegUpdate(void) {
-        ref_deg_speed_ = PID_Calculate(&deg_pid_, sum_deg_, ref_deg_);
+    void setDegSpeed(float deg_speed) { 
+        if(output_type_ == OutputType::NONE){
+            setCmd(deg_speed);
+        }
+        ref_deg_speed_ = deg_speed; 
+        
+    }
+    void setDeg(float deg) { 
+        if(output_type_ == OutputType::NONE){
+            setCmd(deg);
+        }
+        ref_deg_ = deg;
+        
+    }
+    void setDegWithSpeed(float deg, float deg_speed){
+        ref_deg_ = deg;
+        ref_deg_speed_ = deg_speed;
     }
 
-    void pidDegSpeedUpdate(void){
-        cmd_ = PID_Calculate(&deg_speed_pid_, deg_speed_, ref_deg_speed_);
-    }
 
-    void resetPids(void){
-        PID_Reset(&deg_pid_);
-        PID_Reset(&deg_speed_pid_);
-    }
+    void deg_init(float speed_kp, float speed_ki, float speed_kd, float speed_max_out, float speed_max_IL,
+        float pid_speed_improve, float speed_deadband,
+        float deg_kp, float deg_ki, float deg_kd, float max_deg, float deg_max_IL,
+        float pid_deg_improve, float deg_deadband, float output_filter_rc = 0.0f);
 
+    void deg_speed_init(float speed_kp, float speed_ki, float speed_kd, float speed_max_out, float speed_max_IL,
+        float pid_speed_improve, float speed_deadband,float output_filter_rc = 0.0f);
+
+    void deg_with_speed_init(float speed_kp, float speed_ki, float speed_kd, float speed_max_out, float speed_max_IL,
+        float pid_speed_improve, float speed_deadband,
+        float deg_kp, float deg_ki, float deg_kd, float max_deg, float deg_max_IL,
+        float pid_deg_improve, float deg_deadband, float a_max, float output_filter_rc = 0.0f);
+
+    
+
+    void computeOutput(void);
     
     float getRefDeg(void) const { return ref_deg_; }
     float getRefDegSpeed(void) const { return ref_deg_speed_; }
-
     float getSingleDeg(void) const { return single_deg_; }
     float getSumDeg(void) const { return sum_deg_; }
     float getDegSpeed(void) const { return deg_speed_; }
@@ -63,6 +83,8 @@ protected:
     float cmd_{0.0f};
     float ref_deg_speed_{0.0f};
     float ref_deg_{0.0f};
+    float ramp_deg_{0.0f};
+    float ramp_deg_speed_{0.0f};
     
     float max_cmd_{99999.0f};
     float reduction_ratio_{1.0f};
@@ -75,7 +97,36 @@ protected:
 
     PID_t deg_speed_pid_{};
     PID_t deg_pid_{};
+    S_RampPlanner deg_planner_{};
+    
+
     OutputType output_type_{};
+
+    void pidDegUpdate(void) {
+        ref_deg_speed_ = PID_Calculate(&deg_pid_, sum_deg_, ref_deg_);
+        cmd_ = PID_Calculate(&deg_speed_pid_, deg_speed_, ref_deg_speed_);
+    }
+
+    void pidDegSpeedUpdate(void){
+        cmd_ = PID_Calculate(&deg_speed_pid_, deg_speed_, ref_deg_speed_);
+    }
+
+    void pidDegWithSpeedUpdate(void){
+        ramp_deg_ = deg_planner_.computeOutput(ref_deg_, ref_deg_speed_);
+        ramp_deg_speed_ = PID_Calculate(&deg_pid_, sum_deg_, ramp_deg_);
+        cmd_ = PID_Calculate(&deg_speed_pid_, deg_speed_, ramp_deg_speed_);
+    }
+
+    void mitUpdate(void){
+
+    }
+
+    void resetPids(void){
+        PID_Reset(&deg_pid_);
+        PID_Reset(&deg_speed_pid_);
+    }    
+
+
 };
 
 

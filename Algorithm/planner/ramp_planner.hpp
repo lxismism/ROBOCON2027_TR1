@@ -16,7 +16,6 @@
 #include "bsp_dwt.h"
 #include "math_utils.hpp"
 
-#define MAX_DT 0.020f
 
 
 //速度规划这个名字具有极强的误导性，故在此改成S型斜坡规划
@@ -32,7 +31,7 @@ public:
 
 float computeOutput(float v_tar, float a_tar) {
     const float dt = DWT_GetDeltaT(&DWT_CNT_);
-    if(dt > MAX_DT || dt < 1e-6f){
+    if(dt > kMaxdt || dt < 1e-6f){
         return v_ref_;
     }
 
@@ -63,7 +62,7 @@ float computeOutput(float v_tar, float a_tar) {
 
     // 限制加速度的变化率 (Jerk)
     float da = a_des - a_ref_;
-    da = math_utils::Clamp(da, -jerk_max_ * dt, jerk_max_ * dt);
+    math_utils::Clamp(da, -jerk_max_ * dt, jerk_max_ * dt);
     a_ref_ += da;
 
     // 积分出速度
@@ -86,5 +85,6 @@ private:
     float a_ref_{};         
     float v_ref_{};         //根据v_ref = ∫adt生成0到t积分段每一时刻的速度值
     uint32_t DWT_CNT_{};
+    static constexpr float kMaxdt = 0.020f;
 
 };

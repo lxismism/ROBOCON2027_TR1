@@ -42,8 +42,8 @@ public:
     void setMIT(float pos_deg, float kp, float kd,
                 float torque = 0.0f, float speed_deg_s = 0.0f)
     {
-        setMotorDeg(pos_deg);           
-        setMotorDegSpeed(speed_deg_s);  
+        setDeg(pos_deg);           
+        setDegSpeed(speed_deg_s);  
         setMotorCmd(torque);            
         kp_ = kp;
         kd_ = kd;
