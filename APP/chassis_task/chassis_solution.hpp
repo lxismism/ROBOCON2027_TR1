@@ -133,7 +133,7 @@ private:
     }
 
     void updateSpeed(){
-        current_velocity_.speed = drivemotor_->getDegSpeed() * DEG_2_RAD * kWheelRadmeter / kWheelDriveReduction;
+        current_velocity_.speed = drivemotor_->getDegSpeed() * kDegToRad * kWheelRadmeter / kWheelDriveReduction;
     }
 
 };
@@ -202,10 +202,10 @@ private:
     static constexpr float kx3 = 0.2675f; //kx的含义是，点到y轴的距离
 
     static constexpr float kWheelsRestDeg[kWheelNum]{
-        std::atan2(kx0, -ky0) * RAD_2_DEG,
-        std::atan2(-kx1, -ky1) * RAD_2_DEG,
-        std::atan2(-kx2, ky2) * RAD_2_DEG,
-        std::atan2(kx3, ky3) * RAD_2_DEG
+        std::atan2(kx0, -ky0) * kRadToDeg,
+        std::atan2(-kx1, -ky1) * kRadToDeg,
+        std::atan2(-kx2, ky2) * kRadToDeg,
+        std::atan2(kx3, ky3) * kRadToDeg
     };
 
     static constexpr std::array<float, 4> kDriveSign{1.0f, -1.0f, 1.0f, -1.0f}; //由于机械安装问题，每个轮子正转方向可能不一样，这个符号表以测试结果为准

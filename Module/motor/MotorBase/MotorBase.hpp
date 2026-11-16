@@ -15,11 +15,6 @@
 #include "pid_controller.h"
 #include "math_utils.hpp"
 
-#define RAD_2_DEG            57.2957795f
-#define DEG_2_RAD            0.01745329252f
-#define RPM_2_DEG_PER_SEC    6.0f
-#define RPM_2_RAD_PER_SEC    0.104719755f
-
 class MotorBase{
 public:
     MotorBase() = default;

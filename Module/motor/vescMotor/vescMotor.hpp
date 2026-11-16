@@ -105,7 +105,7 @@ public:
                                             (data[2] <<  8) |
                                             data[3]);
         /*RPM = ERPM / num_of_pole_pairs(极对数)*/
-        deg_speed_ = static_cast<float>(ERPM)  * RPM_2_DEG_PER_SEC / num_of_pole_pairs_;
+        deg_speed_ = static_cast<float>(ERPM)  * kRPMToDPS / num_of_pole_pairs_;
         
         /*data[4]~data[5]: 电流，缩放因子为10*/
         int16_t raw_current = static_cast<int16_t>((data[4] << 8) | data[5]);
@@ -142,7 +142,7 @@ public:
 
             case CAN_PACKET_SET_RPM : {
                 if(!isOffline()){
-                    cmd_ = ref_deg_speed_ * static_cast<float>(num_of_pole_pairs_) / RPM_2_DEG_PER_SEC;
+                    cmd_ = ref_deg_speed_ * static_cast<float>(num_of_pole_pairs_) / kRPMToDPS;
                 }
             }
         }

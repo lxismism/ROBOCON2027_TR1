@@ -61,12 +61,12 @@ void SteerWheel::setVelocity(Velocity_t target_velocity){
     
 
     deg_output = (wheel_sum_deg_ + diff) * kWheelDirReduction;
-    degspeed_output = (target_velocity.speed) * RAD_2_DEG * kWheelDriveReduction / kWheelRadmeter; 
+    degspeed_output = (target_velocity.speed) * kRadToDeg * kWheelDriveReduction / kWheelRadmeter; 
 
     dirmotor_->setMotorDeg(deg_output);
 
     const float steer_err = deg_output - dirmotor_->getSumDeg();
-    const float drive_scale = std::fmaxf(0.0f, std::cos(steer_err * DEG_2_RAD));
+    const float drive_scale = std::fmaxf(0.0f, std::cos(steer_err * kDegToRad));
     drivemotor_->setMotorDegSpeed(degspeed_output * drive_scale);
 
 }
@@ -151,10 +151,10 @@ void SteerWheel::homing(void){
 
 void SteerChassis::run(const ChassisTwist &twist){
 
-    const float yaw = cur_world_pose_.yaw_deg * DEG_2_RAD;
+    const float yaw = cur_world_pose_.yaw_deg * kDegToRad;
     const float vx = twist.vx * std::cos(yaw) + twist.vy * std::sin(yaw);
     const float vy = -twist.vx * std::sin(yaw) + twist.vy * std::cos(yaw);
-    const float omega = twist.deg_omega * DEG_2_RAD; 
+    const float omega = twist.deg_omega * kDegToRad; 
 
     if(std::fabs(vx) < 0.01f &&
        std::fabs(vy) < 0.01f &&
@@ -190,10 +190,10 @@ void SteerChassis::run(const ChassisTwist &twist){
 
         desaturate();
         
-        velocitys_[0].dir_deg = std::atan2(vy + omega * kx0 , vx - omega * ky0) * RAD_2_DEG;
-        velocitys_[1].dir_deg = std::atan2(vy - omega * kx1 , vx - omega * ky1) * RAD_2_DEG;
-        velocitys_[2].dir_deg = std::atan2(vy - omega * kx2 , vx + omega * ky2) * RAD_2_DEG;
-        velocitys_[3].dir_deg = std::atan2(vy + omega * kx3 , vx + omega * ky3) * RAD_2_DEG;
+        velocitys_[0].dir_deg = std::atan2(vy + omega * kx0 , vx - omega * ky0) * kRadToDeg;
+        velocitys_[1].dir_deg = std::atan2(vy - omega * kx1 , vx - omega * ky1) * kRadToDeg;
+        velocitys_[2].dir_deg = std::atan2(vy - omega * kx2 , vx + omega * ky2) * kRadToDeg;
+        velocitys_[3].dir_deg = std::atan2(vy + omega * kx3 , vx + omega * ky3) * kRadToDeg;
         
     }
 
@@ -236,21 +236,21 @@ void SteerChassis::ForWardKine(const pub_imu_data &imu_data){
 
     // 轮速的矩阵
     Matrix<8, 1> JWheelsVelocity{
-        kDriveSign[0] * w0.speed * std::cos(w0.dir_deg * DEG_2_RAD),
-        kDriveSign[0] * w0.speed * std::sin(w0.dir_deg * DEG_2_RAD),
-        kDriveSign[1] * w1.speed * std::cos(w1.dir_deg * DEG_2_RAD),
-        kDriveSign[1] * w1.speed * std::sin(w1.dir_deg * DEG_2_RAD),
-        kDriveSign[2] * w2.speed * std::cos(w2.dir_deg * DEG_2_RAD),
-        kDriveSign[2] * w2.speed * std::sin(w2.dir_deg * DEG_2_RAD),
-        kDriveSign[3] * w3.speed * std::cos(w3.dir_deg * DEG_2_RAD),
-        kDriveSign[3] * w3.speed * std::sin(w3.dir_deg * DEG_2_RAD)
+        kDriveSign[0] * w0.speed * std::cos(w0.dir_deg * kDegToRad),
+        kDriveSign[0] * w0.speed * std::sin(w0.dir_deg * kDegToRad),
+        kDriveSign[1] * w1.speed * std::cos(w1.dir_deg * kDegToRad),
+        kDriveSign[1] * w1.speed * std::sin(w1.dir_deg * kDegToRad),
+        kDriveSign[2] * w2.speed * std::cos(w2.dir_deg * kDegToRad),
+        kDriveSign[2] * w2.speed * std::sin(w2.dir_deg * kDegToRad),
+        kDriveSign[3] * w3.speed * std::cos(w3.dir_deg * kDegToRad),
+        kDriveSign[3] * w3.speed * std::sin(w3.dir_deg * kDegToRad)
     };
 
     //底盘旋量
     Vector<3> twist{};
 
     cur_world_pose_.yaw_deg = imu_data.yaw_deg;
-    const float yaw = imu_data.yaw_deg * DEG_2_RAD;
+    const float yaw = imu_data.yaw_deg * kDegToRad;
     //旋转矩阵
     const Matrix<3, 3> JVehicleToWorld{
         std::cos(yaw),-std::sin(yaw), 0.0f,
@@ -262,7 +262,7 @@ void SteerChassis::ForWardKine(const pub_imu_data &imu_data){
 
     chassis_actual_twist_.vx = twist(0, 0);
     chassis_actual_twist_.vy = twist(1, 0);
-    chassis_actual_twist_.deg_omega = twist(2, 0) * RAD_2_DEG;
+    chassis_actual_twist_.deg_omega = twist(2, 0) * kRadToDeg;
 
     cur_world_pose_.x += chassis_actual_twist_.vx * dt;
     cur_world_pose_.y += chassis_actual_twist_.vy * dt;

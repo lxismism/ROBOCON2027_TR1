@@ -78,7 +78,7 @@ public:
 
         /*data[2]~data[3]: data[2]转子转速高8位, data[3]转子转速低8位*/
         int16_t raw_rpm = static_cast<int16_t>((data[2] << 8U) | data[3]);
-        deg_speed_ = raw_rpm * RPM_2_DEG_PER_SEC / reduction_ratio_;
+        deg_speed_ = raw_rpm * kRPMToDPS / reduction_ratio_;
 
         /*data[4]~data[5]: data[4]实际输出转矩高8位，实际输出转矩低8位*/
         int16_t raw_current = static_cast<int16_t>((data[4] << 8U) | data[5]);
@@ -173,7 +173,7 @@ public:
 
         /*data[2]~data[3]: data[2]转子RPM高8位，data[3]转子RPM低8位*/
         int16_t raw_rpm = static_cast<int16_t>((data[2] << 8) | data[3]);
-        deg_speed_ = static_cast<float>(raw_rpm) * RPM_2_DEG_PER_SEC / reduction_ratio_;
+        deg_speed_ = static_cast<float>(raw_rpm) * kRPMToDPS / reduction_ratio_;
 
         /*data[4]~data[5]: data[4]实际转矩电流高8位，data[5]实际按转矩电流低8位*/
         int16_t raw_tor_cur = static_cast<int16_t>((data[4] << 8) | data[5]);
