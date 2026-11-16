@@ -199,7 +199,7 @@ void MotorsAllInit(){
     lift_motor.deg_with_speed_init(400.0f, 5000.0f, 0.0f, 20000.0f, 20000.0f,
     Derivative_On_Measurement | INCREATEMENT_OF_OUT | OutputFilter, 0.1f,
     20.0f, 0.0f, 0.0f, 6000.0f, 6000.0f,
-    Derivative_On_Measurement, 1.0f, 14000.0f, 0.01f);
+    Derivative_On_Measurement, 1.0f, 5000.0f, 0.01f);
 
 }
 

@@ -120,6 +120,11 @@ public:
         return true;
     }
 
+protected:
+    bool isMotorOffline() const override{
+        return isOffline();
+    }
+
 private:
     static constexpr float kPosMinRad   = -12.57f;
     static constexpr float kPosMaxRad   =  12.57f;

@@ -70,6 +70,7 @@ float computeOutput(float v_tar, float a_tar) {
     
     return v_ref_;
 }
+    float getAccel() const { return a_ref_;}
 
     void reset(){
         v_ref_ = 0.0f;

@@ -19,13 +19,14 @@ void MotorBase::deg_speed_init(float speed_kp, float speed_ki, float speed_kd, f
     deg_speed_pid_.Kd = speed_kd;
     deg_speed_pid_.Maxout = speed_max_out;
     deg_speed_pid_.IntegralLimit = speed_max_IL;
+    deg_speed_pid_.Output_LPF_RC = output_filter_rc;
+
 
     deg_speed_pid_.Improve = pid_speed_improve;
     deg_speed_pid_.DeadBand = speed_deadband;
 
     output_type_ = OutputType::SPEED;
 
-    deg_speed_pid_.Output_LPF_RC = output_filter_rc;
 }
 
 void MotorBase::deg_init(float speed_kp, float speed_ki, float speed_kd, float speed_max_out, float speed_max_IL,
@@ -38,11 +39,12 @@ void MotorBase::deg_init(float speed_kp, float speed_ki, float speed_kd, float s
     deg_speed_pid_.Kd = speed_kd;
     deg_speed_pid_.Maxout = speed_max_out;
     deg_speed_pid_.IntegralLimit = speed_max_IL;
+    deg_speed_pid_.Output_LPF_RC = output_filter_rc;
+
 
     deg_speed_pid_.Improve = pid_speed_improve;
     deg_speed_pid_.DeadBand = speed_deadband;
 
-    deg_speed_pid_.Output_LPF_RC = output_filter_rc;
     
     deg_pid_.Kp = deg_kp;
     deg_pid_.Ki = deg_ki;
@@ -67,6 +69,7 @@ void MotorBase::deg_with_speed_init(float speed_kp, float speed_ki, float speed_
     deg_speed_pid_.Kd = speed_kd;
     deg_speed_pid_.Maxout = speed_max_out;
     deg_speed_pid_.IntegralLimit = speed_max_IL;
+    deg_speed_pid_.Output_LPF_RC = output_filter_rc;
 
     deg_speed_pid_.Improve = pid_speed_improve;
     deg_speed_pid_.DeadBand = speed_deadband;
@@ -87,6 +90,14 @@ void MotorBase::deg_with_speed_init(float speed_kp, float speed_ki, float speed_
 }
 
 void MotorBase::computeOutput(void){
+
+    if(isMotorOffline()){
+        resetPids();
+        cmd_ = 0.0f; 
+        return;
+    }
+
+
     switch (output_type_) {
         
         case OutputType::SPEED :{

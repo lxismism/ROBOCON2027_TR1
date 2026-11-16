@@ -95,13 +95,15 @@ protected:
     float torque_{0.0f};        //输出轴扭矩
     float temperature_{0.0f};
 
+    virtual bool isMotorOffline() const{
+        return false;
+    }
+
+private:
     PID_t deg_speed_pid_{};
     PID_t deg_pid_{};
     S_RampPlanner deg_planner_{};
-    
-
     OutputType output_type_{};
-
     void pidDegUpdate(void) {
         ref_deg_speed_ = PID_Calculate(&deg_pid_, sum_deg_, ref_deg_);
         cmd_ = PID_Calculate(&deg_speed_pid_, deg_speed_, ref_deg_speed_);
@@ -113,7 +115,7 @@ protected:
 
     void pidDegWithSpeedUpdate(void){
         ramp_deg_ = deg_planner_.computeOutput(ref_deg_, ref_deg_speed_);
-        ramp_deg_speed_ = PID_Calculate(&deg_pid_, sum_deg_, ramp_deg_);
+        ramp_deg_speed_ = PID_Calculate(&deg_pid_, sum_deg_, ramp_deg_) + deg_planner_.getAccel();
         cmd_ = PID_Calculate(&deg_speed_pid_, deg_speed_, ramp_deg_speed_);
     }
 

@@ -97,6 +97,12 @@ public:
 
     float cmdTrans() { return cmd_ ; }
     
+
+protected:
+    bool isMotorOffline() const override{
+        return isOffline();
+    }
+
 private:
     uint8_t command_id_;
     uint8_t status_id_;

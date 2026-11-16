@@ -94,7 +94,11 @@ public:
     }
 
 
-
+protected:
+    bool isMotorOffline() const override{
+        return isOffline();
+    }
+    
 private:
     static constexpr float kRadMin = -12.5f;   // rad
     static constexpr float kRadMax =  12.5f;

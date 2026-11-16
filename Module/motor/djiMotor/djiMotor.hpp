@@ -61,6 +61,11 @@ public:
 
     float cmdTrans() { return cmd_; }
 
+protected:
+    bool isMotorOffline() const override{
+        return isOffline();
+    }
+
 private:
     static constexpr float kCurToTorque = 0.18f;
 
@@ -121,6 +126,11 @@ public:
     }
 
     float cmdTrans() { return cmd_ * 16384.0f / 20000.0f;}
+
+protected:
+    bool isMotorOffline() const override{
+        return isOffline();
+    }
 
 private:
     bool is_encoder_init = false;
