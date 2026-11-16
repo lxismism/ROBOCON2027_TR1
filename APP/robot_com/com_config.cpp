@@ -174,22 +174,22 @@ static pub_vision_pose vision_pose_msg{};
 void MotorsAllInit(){
     chassis_dirmotor1.deg_init(400.0f, 5000.0f, 0.0f, 20000.0f, 20000.0f,
     Derivative_On_Measurement | INCREATEMENT_OF_OUT | OutputFilter, 0.1f,
-    15.0f, 0.0f, 0.5f, 6000.0f, 6000.0f,
+    15.0f, 0.0f, 0.5f, 2800.0f, 2800.0f,
     Derivative_On_Measurement, 0.1f);
 
     chassis_dirmotor2.deg_init(400.0f, 5000.0f, 0.0f, 20000.0f, 20000.0f,
     Derivative_On_Measurement | INCREATEMENT_OF_OUT | OutputFilter, 0.1f,
-    15.0f, 0.0f, 0.5f, 6000.0f, 6000.0f,
+    15.0f, 0.0f, 0.5f, 2800.0f, 2800.0f,
     Derivative_On_Measurement, 0.1f);
 
     chassis_dirmotor3.deg_init(400.0f, 5000.0f, 0.0f, 20000.0f, 20000.0f,
     Derivative_On_Measurement | INCREATEMENT_OF_OUT | OutputFilter, 0.1f,
-    15.0f, 0.0f, 0.5f, 6000.0f, 6000.0f,
+    15.0f, 0.0f, 0.5f, 2800.0f, 2800.0f,
     Derivative_On_Measurement, 0.1f);
 
     chassis_dirmotor4.deg_init(400.0f, 5000.0f, 0.0f, 20000.0f, 20000.0f,
     Derivative_On_Measurement | INCREATEMENT_OF_OUT | OutputFilter, 0.1f,
-    15.0f, 0.0f, 0.5f, 6000.0f, 6000.0f,
+    15.0f, 0.0f, 0.5f, 2800.0f, 2800.0f,
     Derivative_On_Measurement, 0.1f);
 
     extend_motor.deg_with_speed_init(16.0f, 5.0f, 0.0f, 10000.0f, 10000.0f,
@@ -198,7 +198,7 @@ void MotorsAllInit(){
     
     lift_motor.deg_with_speed_init(400.0f, 5000.0f, 0.0f, 20000.0f, 20000.0f,
     Derivative_On_Measurement | INCREATEMENT_OF_OUT | OutputFilter, 0.1f,
-    20.0f, 0.0f, 0.0f, 6000.0f, 6000.0f,
+    20.0f, 0.0f, 0.0f, 2800.0f, 2800.0f,
     Derivative_On_Measurement, 1.0f, 5000.0f, 0.01f);
 
 }

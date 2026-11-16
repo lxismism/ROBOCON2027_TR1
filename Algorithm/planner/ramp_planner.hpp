@@ -27,6 +27,7 @@ public:
 
     void init(float jerk){
         jerk_max_ = jerk;
+        DWT_CNT_ = DWT->CYCCNT;
     }
 
 float computeOutput(float v_tar, float a_tar) {

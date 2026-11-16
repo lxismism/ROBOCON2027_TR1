@@ -27,6 +27,9 @@ void MotorBase::deg_speed_init(float speed_kp, float speed_ki, float speed_kd, f
 
     output_type_ = OutputType::SPEED;
 
+    deg_speed_pid_.DWT_CNT       = DWT->CYCCNT;   //“从现在开始”，防止初始化后的那一帧直接越过20ms的掉线检测
+
+
 }
 
 void MotorBase::deg_init(float speed_kp, float speed_ki, float speed_kd, float speed_max_out, float speed_max_IL,
@@ -45,6 +48,9 @@ void MotorBase::deg_init(float speed_kp, float speed_ki, float speed_kd, float s
     deg_speed_pid_.Improve = pid_speed_improve;
     deg_speed_pid_.DeadBand = speed_deadband;
 
+    deg_speed_pid_.DWT_CNT       = DWT->CYCCNT;   //“从现在开始”，防止初始化后的那一帧直接越过20ms的掉线检测
+
+
     
     deg_pid_.Kp = deg_kp;
     deg_pid_.Ki = deg_ki;
@@ -56,6 +62,9 @@ void MotorBase::deg_init(float speed_kp, float speed_ki, float speed_kd, float s
     deg_pid_.DeadBand = deg_deadband;
 
     output_type_ = OutputType::DEGREE;
+
+    deg_pid_.DWT_CNT       = DWT->CYCCNT;   //“从现在开始”，防止初始化后的那一帧直接越过20ms的掉线检测
+
 
 }
 
@@ -73,6 +82,11 @@ void MotorBase::deg_with_speed_init(float speed_kp, float speed_ki, float speed_
 
     deg_speed_pid_.Improve = pid_speed_improve;
     deg_speed_pid_.DeadBand = speed_deadband;
+
+    deg_speed_pid_.DWT_CNT       = DWT->CYCCNT;   //“从现在开始”，防止初始化后的那一帧直接越过20ms的掉线检测
+
+
+
     
     deg_pid_.Kp = deg_kp;
     deg_pid_.Ki = deg_ki;
@@ -83,9 +97,13 @@ void MotorBase::deg_with_speed_init(float speed_kp, float speed_ki, float speed_
     deg_pid_.Improve = pid_deg_improve;
     deg_pid_.DeadBand = deg_deadband;
 
+    deg_pid_.DWT_CNT       = DWT->CYCCNT;   //“从现在开始”，防止初始化后的那一帧直接越过20ms的掉线检测
+
+
     output_type_ = OutputType::DEG_WITH_SPEED;
 
     deg_planner_.init(a_max);
+    
 
 }
 
