@@ -13,7 +13,7 @@
 
 #include "MotorBase.hpp"
 #include "CanBus.hpp"
-#include "pid_controller.h"
+#include "pid_controller.hpp"
 
 
 class VESCMotor : public CanDevice , public MotorBase {

@@ -87,6 +87,6 @@ private:
     float a_ref_{};         
     float v_ref_{};         //根据v_ref = ∫adt生成0到t积分段每一时刻的速度值
     uint32_t DWT_CNT_{};
-    static constexpr float kMaxdt = 0.020f;
+    static constexpr float kMaxdt = 0.002f;
 
 };

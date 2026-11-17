@@ -12,7 +12,7 @@
 #pragma once
 
 #include "Canbus.hpp"
-#include "pid_controller.h"
+#include "pid_controller.hpp"
 #include "math_utils.hpp"
 #include "ramp_planner.hpp"
 
@@ -95,6 +95,8 @@ protected:
     float torque_{0.0f};        //输出轴扭矩
     float temperature_{0.0f};
 
+    
+
     virtual bool isMotorOffline() const{
         return false;
     }
@@ -115,7 +117,7 @@ private:
 
     void pidDegWithSpeedUpdate(void){
         ramp_deg_ = deg_planner_.computeOutput(ref_deg_, ref_deg_speed_);
-        ramp_deg_speed_ = PID_Calculate(&deg_pid_, sum_deg_, ramp_deg_) + deg_planner_.getAccel();
+        ramp_deg_speed_ = PID_Calculate(&deg_pid_, sum_deg_, ramp_deg_, deg_planner_.getAccel());
         cmd_ = PID_Calculate(&deg_speed_pid_, deg_speed_, ramp_deg_speed_);
     }
 

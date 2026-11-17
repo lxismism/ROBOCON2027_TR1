@@ -45,15 +45,12 @@ extern C620Motor lift_motor;
 uint32_t rising{};
 uint32_t falling{};
 
-float ref_deg{0.0f};
-float ref_deg_speed{0.0f};
 
 void debug2Task(void *argument){
     TickType_t currentTime = xTaskGetTickCount();
 
     for(;;){
 
-        lift_motor.setDegWithSpeed(ref_deg, ref_deg_speed);
         vTaskDelayUntil(&currentTime, 20);
     }
 

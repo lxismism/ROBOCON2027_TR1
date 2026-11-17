@@ -19,7 +19,7 @@
 #include "topics.hpp"
 #include "topic_pool.hpp"
 
-#include "pid_controller.h"
+#include "pid_controller.hpp"
 
 osThreadId_t Chassis_TaskHandle;
 

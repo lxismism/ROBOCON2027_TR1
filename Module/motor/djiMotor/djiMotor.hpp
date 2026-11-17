@@ -15,10 +15,13 @@
 
 #include "MotorBase.hpp"
 #include "CanBus.hpp"
-#include "pid_controller.h"
+#include "pid_controller.hpp"
 
 class C610Motor : public CanDevice , public MotorBase {
 public:
+
+    static constexpr float kMaxDegSpeed = 2000.0f;
+
 
     C610Motor(CanBus *manager, uint32_t id, bool is_extid, uint32_t tx_id, bool tx_is_extid,
               float reduction = 36.0f / 1.0f, float max_cmd = 10000.0f)
@@ -69,6 +72,7 @@ protected:
 private:
     static constexpr float kCurToTorque = 0.18f;
 
+
     uint16_t encoder_offset_{};
     uint16_t last_encoder_{};
     int32_t round_cnt_;
@@ -78,6 +82,9 @@ private:
 
 class C620Motor : public CanDevice , public MotorBase {
 public:
+    static constexpr float kMaxDegSpeed = 2800.0f;
+
+
     C620Motor(CanBus *manager, uint32_t id, bool is_extid, uint32_t tx_id, bool tx_is_extid,
               float reduction = 3591.0f / 187.0f, float max_cmd = 20000.0f)
               : CanDevice(manager, id, is_extid, tx_id, tx_is_extid){
