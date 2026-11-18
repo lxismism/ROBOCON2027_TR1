@@ -57,7 +57,21 @@ public:
 
         if(isOffline()) return false;
 
-        int32_t command = static_cast<int32_t>(cmdTrans());
+        int32_t command = 0;
+
+        switch (command_id_) {
+            
+            case CAN_PACKET_SET_CURRENT :{
+                command = static_cast<int32_t>(cmdTrans());
+            }break;
+
+            case CAN_PACKET_SET_RPM :{
+                command = static_cast<int32_t>(ref_deg_speed_ * static_cast<float>(num_of_pole_pairs_) * kDPSToRPM);
+            }break;         
+
+        }
+
+        
         data[0] = static_cast<uint8_t>((command >> 24) & 0xFF);
         data[1] = static_cast<uint8_t>((command >> 16) & 0xFF);
         data[2] = static_cast<uint8_t>((command >>  8) & 0xFF);

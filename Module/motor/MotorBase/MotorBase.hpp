@@ -35,16 +35,12 @@ public:
     }
     
     void setDegSpeed(float deg_speed) { 
-        if(output_type_ == OutputType::NONE){
-            setCmd(deg_speed);
-        }
-        ref_deg_speed_ = deg_speed; //此时的ref_deg_speed_只用作调试监看用
+
+        ref_deg_speed_ = deg_speed;
         
     }
     void setDeg(float deg) { 
-        if(output_type_ == OutputType::NONE){
-            setCmd(deg);
-        }
+
         ref_deg_ = deg;
         
     }
