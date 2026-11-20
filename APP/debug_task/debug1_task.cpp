@@ -24,7 +24,7 @@
 #include "vescMotor.hpp"
 
 #include "com_config.h"
-#include "pid_controller.h"
+#include "pid_controller.hpp"
 #include "topic_pool.hpp"
 #include "chassis_solution.hpp"
 #include "chassis_task.h"

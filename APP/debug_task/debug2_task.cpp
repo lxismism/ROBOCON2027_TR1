@@ -19,6 +19,7 @@
 #include "com_config.h"
 #include "chassis_solution.hpp"
 #include <stdio.h>
+#include "dmMotor.hpp"
 
 osThreadId_t Debug2_TaskHandle;
 
@@ -37,14 +38,18 @@ extern PhotoGate chassis_photogate2;
 extern PhotoGate chassis_photogate3;
 extern PhotoGate chassis_photogate4;
 
+extern DM4310Motor wrist_motor;
+extern C610Motor extend_motor;
+extern C620Motor lift_motor;
+
 uint32_t rising{};
 uint32_t falling{};
+
 
 void debug2Task(void *argument){
     TickType_t currentTime = xTaskGetTickCount();
 
     for(;;){
-
 
         vTaskDelayUntil(&currentTime, 20);
     }

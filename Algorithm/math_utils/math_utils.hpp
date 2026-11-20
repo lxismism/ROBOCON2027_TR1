@@ -11,9 +11,12 @@
 #pragma once
 #include <cmath>
 
+static constexpr float kPI = 3.1415926535897f;
 static constexpr float kDegToRad = 0.017453292519943295f;
 static constexpr float kRadToDeg = 57.29577951308232f;
-static constexpr float kPI = 3.1415926535897f;
+static constexpr float kRPMToDPS = 6.0f;    //RPM到°每秒的转换系数
+static constexpr float kDPSToRPM = 1.0f / kRPMToDPS;
+static constexpr float kRPMToRPS = 0.104719755f; //RMP到rad/s的转换系数
 
 namespace math_utils {
 

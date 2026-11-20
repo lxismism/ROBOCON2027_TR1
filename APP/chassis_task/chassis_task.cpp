@@ -19,7 +19,10 @@
 #include "topics.hpp"
 #include "topic_pool.hpp"
 
-#include "pid_controller.h"
+#include "pid_controller.hpp"
+
+#include "ramp_planner.hpp"
+
 
 osThreadId_t Chassis_TaskHandle;
 
@@ -40,8 +43,16 @@ PID_t pid_x_pos{.Kp = 6.5f, .Ki = 2.5f, .Kd = 0.02f,
     .IntegralLimit = 1.5f, .Maxout = 1.5f, .DeadBand = 0.01f, .Improve = Derivative_On_Measurement};
 PID_t pid_y_pos{.Kp = 6.5f, .Ki = 2.5f, .Kd = 0.02f, 
     .IntegralLimit = 1.5f, .Maxout = 1.5f, .DeadBand = 0.01f, .Improve = Derivative_On_Measurement};
-PID_t pid_deg_pos{.Kp = 25.5f, .Ki = 10.1f, .Kd = 3.5f, 
+PID_t pid_deg_pos{.Kp = 20.5f, .Ki = 7.1f, .Kd = 2.5f, 
     .IntegralLimit = 360.0f, .Maxout = 360.0f, .DeadBand = 0.01f, .Improve = Derivative_On_Measurement};
+S_RampPlanner planner_x{};
+S_RampPlanner planner_y{};
+S_RampPlanner planner_yaw{};
+
+static constexpr float kXMaxAccel = 3.75f;
+static constexpr float kYMaxAccel = 3.75f;
+static constexpr float kYawMaxAccel = 720.0f;
+
 
 void ChassisForAuto();
 void ChassisForManual();
@@ -49,6 +60,11 @@ void ChassisForManual();
 void chassisTask(void *argument){
     
     TickType_t current = xTaskGetTickCount();
+
+    planner_x.init(kXMaxAccel);
+    planner_y.init(kYMaxAccel);
+    planner_yaw.init(kYawMaxAccel);
+
     vTaskDelayUntil(&current, 500);
     for(;;)
     {
@@ -87,15 +103,24 @@ void ChassisForAuto(){
 
     ChassisTwist twist{};
 
+    float ramp_x{};
+    float ramp_y{};
+    float ramp_yaw{};
+
+    ramp_x = planner_x.computeOutput(chassis_cmd_msg.x_tar, 1.5f);
     twist.vx = 
-    PID_Calculate(&pid_x_pos, chassis_FK_pose_msg.x, chassis_cmd_msg.x_tar);
+    PID_Calculate(&pid_x_pos, chassis_FK_pose_msg.x, ramp_x);
+
+    ramp_y = planner_y.computeOutput(chassis_cmd_msg.y_tar, 1.5f);
     twist.vy = 
-    PID_Calculate(&pid_y_pos, chassis_FK_pose_msg.y, chassis_cmd_msg.y_tar);
+    PID_Calculate(&pid_y_pos, chassis_FK_pose_msg.y, ramp_y);
+
 
     const float yaw_now = chassis_FK_pose_msg.yaw_deg;                 // 窗口值 [-180,180)
     const float yaw_ref = yaw_now + math_utils::WrapAngle(
                                     chassis_cmd_msg.yaw_deg - yaw_now, -180.0f, 180.0f);
-    twist.deg_omega = PID_Calculate(&pid_deg_pos, yaw_now, yaw_ref);
+    ramp_yaw = planner_yaw.computeOutput(chassis_cmd_msg.yaw_deg, 360.0f);
+    twist.deg_omega = PID_Calculate(&pid_deg_pos, yaw_now, ramp_yaw);
 
     SteerChassis_solver.run(twist);
     

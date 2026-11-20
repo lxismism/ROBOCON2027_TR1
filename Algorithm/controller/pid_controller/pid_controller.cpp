@@ -9,18 +9,17 @@
  * 
  */
 
-#include "pid_controller.h"
+#include "pid_controller.hpp"
 #include "bsp_dwt.h"
 
-#define MAX_DT 0.02f
-
+static constexpr float kMaxdt = 0.002f;
 static void f_Iout_Clamp(PID_t *pid);
 static void f_Derivate_On_Measurement(PID_t *pid);
 static void f_Output_Filter(PID_t *pid);
 static void f_Output_Clamp(PID_t *pid);
 
 
-float PID_Calculate(PID_t *pid, float measure, float ref)
+float PID_Calculate(PID_t *pid, float measure, float ref, float external_ff)
 {
     const uint8_t inc_mode = (pid->Improve & INCREATEMENT_OF_OUT) ? 1 : 0;
 
@@ -30,7 +29,7 @@ float PID_Calculate(PID_t *pid, float measure, float ref)
     
     pid->dt = DWT_GetDeltaT(&pid->DWT_CNT);
 
-    if(pid->dt > MAX_DT){
+    if(pid->dt > kMaxdt){
         
         pid->Earlier_Measure = pid->Measure;
         pid->Last_Measure = pid->Measure;
@@ -80,8 +79,8 @@ float PID_Calculate(PID_t *pid, float measure, float ref)
         f_Derivate_On_Measurement(pid);
 
     pid->Output = (inc_mode) ?
-        (pid->Last_Output + pid->Pout + pid->ITerm + pid->Dout) :
-        (pid->Pout + pid->Iout + pid->Dout);
+        (pid->Last_Output + pid->Pout + pid->ITerm + pid->Dout + external_ff) :
+        (pid->Pout + pid->Iout + pid->Dout + external_ff);
     
     if(pid->Improve & OutputFilter)
         f_Output_Filter(pid);

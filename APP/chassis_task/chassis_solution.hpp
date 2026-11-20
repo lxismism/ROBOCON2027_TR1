@@ -31,10 +31,10 @@
 static constexpr uint8_t kWheelNum = 4U;        //轮数
 
 static constexpr std::array<std::array<float, 2>, kWheelNum> edge_at_zeros{{
-    {-60.0f, 120.0f},
-    {120.0f, -60.0f},
+    {-75.0f, 105.0f},
     {105.0f, -75.0f},
-    {105.0f, -75.0f}
+    {120.0f, -60.0f},
+    {120.0f, -60.0f}
 }};
 
 static constexpr uint8_t homing_ways[kWheelNum]{0, 1, 0, 1};
@@ -112,7 +112,7 @@ private:
                                                                     //编号为0的数组意为逆时针针转时，遇到的上升沿位置，这里根据0号轮填了个默认值。
     float deg_offset_{};
     float ramp_deg_homing_{};
-    float deg_homing_speed_{0.1f};
+    float deg_homing_speed_{0.2f};
 
     float first_zero_{};    
     float second_zero_{};
@@ -133,7 +133,7 @@ private:
     }
 
     void updateSpeed(){
-        current_velocity_.speed = drivemotor_->getDegSpeed() * DEG_2_RAD * kWheelRadmeter / kWheelDriveReduction;
+        current_velocity_.speed = drivemotor_->getDegSpeed() * kDegToRad * kWheelRadmeter / kWheelDriveReduction;
     }
 
 };
@@ -192,23 +192,23 @@ private:
 
 
     //ky,kx的值即便在同一个机器人上，也应该是可以不同的，其中，它的原点取决于你想让机器人自转时，绕机器人的哪个点旋转
-    static constexpr float ky0 = 0.18f;  //ky的含义是，点到x轴的距离
-    static constexpr float kx0 = 0.1275f; //kx的含义是，点到y轴的距离
-    static constexpr float ky1 = 0.18f;  //ky的含义是，点到x轴的距离
-    static constexpr float kx1 = 0.1275f; //kx的含义是，点到y轴的距离
-    static constexpr float ky2 = 0.215f;  //ky的含义是，点到x轴的距离
-    static constexpr float kx2 = 0.2675f; //kx的含义是，点到y轴的距离
-    static constexpr float ky3 = 0.215f;  //ky的含义是，点到x轴的距离
-    static constexpr float kx3 = 0.2675f; //kx的含义是，点到y轴的距离
+    static constexpr float ky0 = 0.22125f;  //ky的含义是，点到x轴的距离
+    static constexpr float kx0 = 0.25f; //kx的含义是，点到y轴的距离
+    static constexpr float ky1 = 0.22125f;  //ky的含义是，点到x轴的距离
+    static constexpr float kx1 = 0.25f; //kx的含义是，点到y轴的距离
+    static constexpr float ky2 = 0.22125f;  //ky的含义是，点到x轴的距离
+    static constexpr float kx2 = 0.25f; //kx的含义是，点到y轴的距离
+    static constexpr float ky3 = 0.22125f;  //ky的含义是，点到x轴的距离
+    static constexpr float kx3 = 0.25f; //kx的含义是，点到y轴的距离
 
     static constexpr float kWheelsRestDeg[kWheelNum]{
-        std::atan2(kx0, -ky0) * RAD_2_DEG,
-        std::atan2(-kx1, -ky1) * RAD_2_DEG,
-        std::atan2(-kx2, ky2) * RAD_2_DEG,
-        std::atan2(kx3, ky3) * RAD_2_DEG
+        std::atan2(kx0, -ky0) * kRadToDeg,
+        std::atan2(-kx1, -ky1) * kRadToDeg,
+        std::atan2(-kx2, ky2) * kRadToDeg,
+        std::atan2(kx3, ky3) * kRadToDeg
     };
 
-    static constexpr std::array<float, 4> kDriveSign{1.0f, -1.0f, 1.0f, -1.0f}; //由于机械安装问题，每个轮子正转方向可能不一样，这个符号表以测试结果为准
+    static constexpr std::array<float, 4> kDriveSign{1.0f, 1.0f, 1.0f, -1.0f}; //由于机械安装问题，每个轮子正转方向可能不一样，这个符号表以测试结果为准
 
     static constexpr float kWheelMaxSpeed = 2.5f;   //最大轮速，这个跟限制底盘最大移动速度不是一回事，它是为了避免解算时算出的单个轮子速度超过电机物理极限设计的
 

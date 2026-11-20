@@ -15,44 +15,20 @@
 
 #include "MotorBase.hpp"
 #include "CanBus.hpp"
-#include "pid_controller.h"
+#include "pid_controller.hpp"
 
 class C610Motor : public CanDevice , public MotorBase {
 public:
 
-    C610Motor(CanBus *manager, uint32_t id, bool is_extid, uint32_t tx_id, bool tx_is_extid, const OutputType output_type,
-              float reduction = 36.0f / 1.0f, float max_cmd = 10000.0f, float output_filter_rc = 0.0f,
-              float speed_kp=0.0f, float speed_ki=0.0f, float speed_kd=0.0f, float speed_max_out = 10000.0f, float speed_Integral_Limit = 10000.0f,
-              uint16_t pid_speed_improve = NONE, float speed_deadband = 0.001f,
-              float deg_kp=0.0f, float deg_ki=0.0f, float deg_kd=0.0f, float deg_max_output=5000.0f, float deg_Integral_Limit=5000.0f,
-              uint16_t pid_deg_improve = NONE, float deg_deadband = 0.001f)
+    static constexpr float kMaxDegSpeed = 2000.0f;
+
+
+    C610Motor(CanBus *manager, uint32_t id, bool is_extid, uint32_t tx_id, bool tx_is_extid,
+              float reduction = 36.0f / 1.0f, float max_cmd = 10000.0f)
               : CanDevice(manager, id, is_extid, tx_id, tx_is_extid){
 
                 reduction_ratio_ = reduction;
                 max_cmd_ = max_cmd;
-                output_type_ = output_type;
-
-                deg_speed_pid_.Kp = speed_kp;
-                deg_speed_pid_.Ki = speed_ki;
-                deg_speed_pid_.Kd = speed_kd;
-                deg_speed_pid_.Maxout = speed_max_out;
-                deg_speed_pid_.IntegralLimit = speed_Integral_Limit;
-
-                deg_speed_pid_.Output_LPF_RC = output_filter_rc;
-                deg_speed_pid_.Improve = pid_speed_improve;
-                deg_speed_pid_.DeadBand = speed_deadband;
-
-                
-                deg_pid_.Kp = deg_kp;
-                deg_pid_.Ki = deg_ki;
-                deg_pid_.Kd = deg_kd;
-                deg_pid_.Maxout = deg_max_output;
-                deg_pid_.IntegralLimit = deg_Integral_Limit;
-
-                deg_pid_.Output_LPF_RC = output_filter_rc;
-                deg_pid_.Improve = pid_deg_improve;
-                deg_pid_.DeadBand = deg_deadband;
-
 
             }
 
@@ -78,7 +54,7 @@ public:
 
         /*data[2]~data[3]: data[2]转子转速高8位, data[3]转子转速低8位*/
         int16_t raw_rpm = static_cast<int16_t>((data[2] << 8U) | data[3]);
-        deg_speed_ = raw_rpm * RPM_2_DEG_PER_SEC / reduction_ratio_;
+        deg_speed_ = raw_rpm * kRPMToDPS / reduction_ratio_;
 
         /*data[4]~data[5]: data[4]实际输出转矩高8位，实际输出转矩低8位*/
         int16_t raw_current = static_cast<int16_t>((data[4] << 8U) | data[5]);
@@ -88,18 +64,14 @@ public:
 
     float cmdTrans() { return cmd_; }
 
-    void computeOutput(void){
-        if(!isOffline()){
-            if(output_type_ == OutputType::DEGREE ) pidDegUpdate();
-            if(output_type_ != OutputType::NONE) pidDegSpeedUpdate();
-            //目前只做了串级pid
-        } else {
-            resetPids();
-        }
+protected:
+    bool isMotorOffline() const override{
+        return isOffline();
     }
 
 private:
     static constexpr float kCurToTorque = 0.18f;
+
 
     uint16_t encoder_offset_{};
     uint16_t last_encoder_{};
@@ -110,38 +82,14 @@ private:
 
 class C620Motor : public CanDevice , public MotorBase {
 public:
-    C620Motor(CanBus *manager, uint32_t id, bool is_extid, uint32_t tx_id, bool tx_is_extid, const OutputType output_type,
-              float reduction = 3591.0f / 187.0f, float max_cmd = 20000.0f, float output_filter_rc = 0.0f,
-              float speed_kp=0.0f, float speed_ki=0.0f, float speed_kd=0.0f, float speed_max_out = 20000.0f, float speed_max_IL = 20000.0f,
-              uint16_t pid_speed_improve = NONE, float speed_deadband = 0.001f,
-              float deg_kp=0.0f, float deg_ki=0.0f, float deg_kd=0.0f, float max_deg=5000.0f, float deg_max_IL=5000.0f,
-              uint16_t pid_deg_improve = NONE, float deg_deadband = 0.001f)
-              : CanDevice(manager, id, is_extid, tx_id, tx_is_extid){
+    static constexpr float kMaxDegSpeed = 2800.0f;
 
+
+    C620Motor(CanBus *manager, uint32_t id, bool is_extid, uint32_t tx_id, bool tx_is_extid,
+              float reduction = 3591.0f / 187.0f, float max_cmd = 20000.0f)
+              : CanDevice(manager, id, is_extid, tx_id, tx_is_extid){
                 reduction_ratio_ = reduction;
                 max_cmd_ = max_cmd;
-                output_type_ = output_type;
-
-                deg_speed_pid_.Kp = speed_kp;
-                deg_speed_pid_.Ki = speed_ki;
-                deg_speed_pid_.Kd = speed_kd;
-                deg_speed_pid_.Maxout = speed_max_out;
-                deg_speed_pid_.IntegralLimit = speed_max_IL;
-
-                deg_speed_pid_.Output_LPF_RC = output_filter_rc;
-                deg_speed_pid_.Improve = pid_speed_improve;
-                deg_speed_pid_.DeadBand = speed_deadband;
-
-                
-                deg_pid_.Kp = deg_kp;
-                deg_pid_.Ki = deg_ki;
-                deg_pid_.Kd = deg_kd;
-                deg_pid_.Maxout = max_deg;
-                deg_pid_.IntegralLimit = deg_max_IL;
-
-                deg_pid_.Output_LPF_RC = output_filter_rc;
-                deg_pid_.Improve = pid_deg_improve;
-                deg_pid_.DeadBand = deg_deadband;
             }
 
 
@@ -173,7 +121,7 @@ public:
 
         /*data[2]~data[3]: data[2]转子RPM高8位，data[3]转子RPM低8位*/
         int16_t raw_rpm = static_cast<int16_t>((data[2] << 8) | data[3]);
-        deg_speed_ = static_cast<float>(raw_rpm) * RPM_2_DEG_PER_SEC / reduction_ratio_;
+        deg_speed_ = static_cast<float>(raw_rpm) * kRPMToDPS / reduction_ratio_;
 
         /*data[4]~data[5]: data[4]实际转矩电流高8位，data[5]实际按转矩电流低8位*/
         int16_t raw_tor_cur = static_cast<int16_t>((data[4] << 8) | data[5]);
@@ -186,15 +134,11 @@ public:
 
     float cmdTrans() { return cmd_ * 16384.0f / 20000.0f;}
 
-    void computeOutput(void){
-        if(!isOffline()){
-            if(output_type_ == OutputType::DEGREE ) pidDegUpdate();
-            if(output_type_ != OutputType::NONE) pidDegSpeedUpdate();
-            //目前只做了串级pid
-        } else {
-            resetPids();
-        }
+protected:
+    bool isMotorOffline() const override{
+        return isOffline();
     }
+
 private:
     bool is_encoder_init = false;
 
