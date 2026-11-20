@@ -79,10 +79,10 @@ std::array<VESCMotor*, 4> chassis_drivemotors{&chassis_drivemotor1, &chassis_dri
 osThreadId_t can2Send_TaskHandle;
 CanBus fdcan2_bus(hfdcan2);
 
-C620Motor chassis_dirmotor1(&fdcan2_bus, 0x201, false, 0x200, false);
-C620Motor chassis_dirmotor2(&fdcan2_bus, 0x202, false, 0x200, false);
-C620Motor chassis_dirmotor3(&fdcan2_bus, 0x203, false, 0x200, false);
-C620Motor chassis_dirmotor4(&fdcan2_bus, 0x204, false, 0x200, false);
+C620Motor chassis_dirmotor1(&fdcan2_bus, 0x201, false, 0x200, false, 8.0f);
+C620Motor chassis_dirmotor2(&fdcan2_bus, 0x202, false, 0x200, false, 8.0f);
+C620Motor chassis_dirmotor3(&fdcan2_bus, 0x203, false, 0x200, false, 8.0f);
+C620Motor chassis_dirmotor4(&fdcan2_bus, 0x204, false, 0x200, false, 8.0f);
 
 std::array<C620Motor*, 4> chassis_dirmotors{&chassis_dirmotor1, &chassis_dirmotor2,
                                             &chassis_dirmotor3, &chassis_dirmotor4};
