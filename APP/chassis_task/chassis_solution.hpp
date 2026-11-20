@@ -32,7 +32,7 @@ static constexpr uint8_t kWheelNum = 4U;        //轮数
 
 static constexpr std::array<std::array<float, 2>, kWheelNum> edge_at_zeros{{
     {-75.0f, 105.0f},
-    {105.0f, -75.0f},
+    {150.0f, -30.0f},
     {120.0f, -60.0f},
     {120.0f, -60.0f}
 }};

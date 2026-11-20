@@ -304,8 +304,6 @@ void uart3RxProcessTask(void *argument){
             for(uint8_t i = 0; i < packet.len; ++i){
                 if(rm_pocket.processByte(packet.data[i])){
 
-                    
-
                     const auto &rc_data = rm_pocket.getRCState();
                     rc_data_msg.joyRHori = rc_data.joyRHori;
                     rc_data_msg.joyRVert = rc_data.joyRVert;

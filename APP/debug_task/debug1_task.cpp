@@ -16,6 +16,7 @@
 #include "lockfree_queue.hpp"
 #include "UartPort.hpp"
 #include "topics.hpp"
+#include "mit_controller.hpp"
 
 #include "Canbus.hpp"
 #include "MotorBase.hpp"

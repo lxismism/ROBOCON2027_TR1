@@ -39,19 +39,19 @@ static pub_chassis_cmd chassis_cmd_msg{};
 static TypedTopicSubscriber<pub_imu_data> imu_data_sub("imu_data", 8U);
 static pub_imu_data imu_data_msg{};
 
-PID_t pid_x_pos{.Kp = 6.5f, .Ki = 2.5f, .Kd = 0.02f, 
+PID_t pid_x_pos{.Kp = 2.5f, .Ki = 0.5f, .Kd = 0.1f, 
     .IntegralLimit = 1.5f, .Maxout = 1.5f, .DeadBand = 0.01f, .Improve = Derivative_On_Measurement};
-PID_t pid_y_pos{.Kp = 6.5f, .Ki = 2.5f, .Kd = 0.02f, 
+PID_t pid_y_pos{.Kp = 2.5f, .Ki = 0.5f, .Kd = 0.1f, 
     .IntegralLimit = 1.5f, .Maxout = 1.5f, .DeadBand = 0.01f, .Improve = Derivative_On_Measurement};
-PID_t pid_deg_pos{.Kp = 20.5f, .Ki = 7.1f, .Kd = 2.5f, 
-    .IntegralLimit = 360.0f, .Maxout = 360.0f, .DeadBand = 0.01f, .Improve = Derivative_On_Measurement};
+PID_t pid_deg_pos{.Kp = 2.5f, .Ki = 0.5f, .Kd = 0.2f, 
+    .IntegralLimit = 360.0f, .Maxout = 720.0f, .DeadBand = 0.01f, .Improve = Derivative_On_Measurement};
 S_RampPlanner planner_x{};
 S_RampPlanner planner_y{};
 S_RampPlanner planner_yaw{};
 
-static constexpr float kXMaxAccel = 3.75f;
-static constexpr float kYMaxAccel = 3.75f;
-static constexpr float kYawMaxAccel = 720.0f;
+static constexpr float kXMaxAccel = 4.75f;
+static constexpr float kYMaxAccel = 4.75f;
+static constexpr float kYawMaxAccel = 1800.0f;
 
 
 void ChassisForAuto();
@@ -79,18 +79,17 @@ void chassisTask(void *argument){
             chassis_FK_pose_msg.yaw_deg = SteerChassis_solver.getChassisPose().yaw_deg;
             chassis_FK_pose_pub.Publish(chassis_FK_pose_msg);
 
-            if(chassis_cmd_sub.TryGet(&chassis_cmd_msg)){       //ozone调试自动时注释此行
-                switch (chassis_cmd_msg.cmd_type) {
+            (void) chassis_cmd_sub.TryGet(&chassis_cmd_msg);
+            switch (chassis_cmd_msg.cmd_type) {
 
-                    case ControlMode::AUTOMATIC     :{
-                        ChassisForAuto();
-                    } break;
-                    case ControlMode::PURELY_MANUAL :{
-                        ChassisForManual();
-                    } break;
+                case ControlMode::AUTOMATIC     :{
+                    ChassisForAuto();
+                } break;
+                case ControlMode::PURELY_MANUAL :{
+                    ChassisForManual();
+                } break;
 
-                }
-            }           //ozone调试自动时注释此行
+            }
 
         }
 
@@ -109,18 +108,18 @@ void ChassisForAuto(){
 
     ramp_x = planner_x.computeOutput(chassis_cmd_msg.x_tar, 1.5f);
     twist.vx = 
-    PID_Calculate(&pid_x_pos, chassis_FK_pose_msg.x, ramp_x);
+    PID_Calculate(&pid_x_pos, chassis_FK_pose_msg.x, ramp_x, planner_x.getAccel());
 
     ramp_y = planner_y.computeOutput(chassis_cmd_msg.y_tar, 1.5f);
-    twist.vy = 
-    PID_Calculate(&pid_y_pos, chassis_FK_pose_msg.y, ramp_y);
+    twist.vy =  
+    PID_Calculate(&pid_y_pos, chassis_FK_pose_msg.y, ramp_y, planner_y.getAccel());
 
 
     const float yaw_now = chassis_FK_pose_msg.yaw_deg;                 // 窗口值 [-180,180)
     const float yaw_ref = yaw_now + math_utils::WrapAngle(
                                     chassis_cmd_msg.yaw_deg - yaw_now, -180.0f, 180.0f);
-    ramp_yaw = planner_yaw.computeOutput(chassis_cmd_msg.yaw_deg, 360.0f);
-    twist.deg_omega = PID_Calculate(&pid_deg_pos, yaw_now, ramp_yaw);
+    ramp_yaw = planner_yaw.computeOutput(yaw_ref, 720.0f);
+    twist.deg_omega = PID_Calculate(&pid_deg_pos, yaw_now, ramp_yaw, planner_yaw.getAccel());
 
     SteerChassis_solver.run(twist);
     

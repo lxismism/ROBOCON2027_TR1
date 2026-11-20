@@ -9,18 +9,11 @@
  * 
  */
 
-#ifndef MIT_CONTROLLER_H
-#define MIT_CONTROLLER_H
+#pragma once
 
-#ifdef __cplusplus
-extern "C"{
-#endif
+#include <cstdint>
 
-#include <stdint.h>
-
-
-
-typedef struct{
+struct MIT_t{
 
     float Kp;
     float Kd;
@@ -32,7 +25,6 @@ typedef struct{
     
     float Err;
 
-
     float Pout, Dout;
     float Output;
 
@@ -40,14 +32,8 @@ typedef struct{
 
     float DeadBand;
 
-} MIT_t;
+};
 
 float MIT_Calculate(MIT_t *mit, float target_pos, float measure_pos, float target_speed, float measure_speed, float torque_ff);
 void MIT_Reset(MIT_t *mit);
 
-#ifdef __cplusplus
-}
-#endif
-
-
-#endif

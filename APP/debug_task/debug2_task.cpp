@@ -42,8 +42,14 @@ extern DM4310Motor wrist_motor;
 extern C610Motor extend_motor;
 extern C620Motor lift_motor;
 
+
+static TypedTopicSubscriber<pub_chassis_FK_pose> chassis_FK_pose_sub("chassis_FK_pose", 8U);
+static pub_chassis_FK_pose chassis_FK_pose_msg{};
+
 uint32_t rising{};
 uint32_t falling{};
+
+void printChassisCurse();
 
 
 void debug2Task(void *argument){
@@ -51,9 +57,16 @@ void debug2Task(void *argument){
 
     for(;;){
 
-        vTaskDelayUntil(&currentTime, 20);
+        (void)chassis_FK_pose_sub.TryGet(&chassis_FK_pose_msg);
+        printChassisCurse();
+
+        vTaskDelayUntil(&currentTime, 1);
     }
 
+}
+
+void printChassisCurse(){
+    printf("%.6f,%.6f,%.6f",chassis_FK_pose_msg.x, chassis_FK_pose_msg.y, chassis_FK_pose_msg.yaw_deg);
 }
 
 void printDirDegSpeedCurse(){
