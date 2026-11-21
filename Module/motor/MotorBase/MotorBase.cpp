@@ -107,10 +107,20 @@ void MotorBase::deg_with_speed_init(float speed_kp, float speed_ki, float speed_
 
 }
 
+void MotorBase::mit_init(float kp, float kd, float Maxout, float DeadBand){
+    mit_.Kp = kp;
+    mit_.Kd = kd;
+    mit_.Maxout = Maxout;
+    mit_.DeadBand = DeadBand;
+
+    output_type_ = OutputType::MIT;
+}
+
 void MotorBase::computeOutput(void){
 
     if(isMotorOffline()){
         resetPids();
+        resetMits();
         cmd_ = 0.0f; 
         return;
     }

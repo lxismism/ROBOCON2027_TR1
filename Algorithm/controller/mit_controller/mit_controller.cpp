@@ -40,7 +40,6 @@ float MIT_Calculate(MIT_t *mit, float target_pos, float measure_pos,
 }
 
 void MIT_Reset(MIT_t *mit){
-    mit->Err = 0.0f;
     mit->Pout = 0.0f;
     mit->Dout = 0.0f;
     mit->Output = 0.0f;

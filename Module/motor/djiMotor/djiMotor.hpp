@@ -86,10 +86,11 @@ public:
 
 
     C620Motor(CanBus *manager, uint32_t id, bool is_extid, uint32_t tx_id, bool tx_is_extid,
-              float reduction = 3591.0f / 187.0f, float max_cmd = 20000.0f)
+              float reduction = 3591.0f / 187.0f, float max_cmd = 20000.0f, float kCurToTorque = 0.3f)
               : CanDevice(manager, id, is_extid, tx_id, tx_is_extid){
                 reduction_ratio_ = reduction;
                 max_cmd_ = max_cmd;
+                kCurToTorque_ = kCurToTorque;
             }
 
 
@@ -125,7 +126,7 @@ public:
 
         /*data[4]~data[5]: data[4]实际转矩电流高8位，data[5]实际按转矩电流低8位*/
         int16_t raw_tor_cur = static_cast<int16_t>((data[4] << 8) | data[5]);
-        torque_ = static_cast<float>(raw_tor_cur) *20.0f * kCurToTorque / 16384.0f ;       //torque = current * k
+        torque_ = static_cast<float>(raw_tor_cur) *20.0f * kCurToTorque_ / 16384.0f ;       //torque = current * k
 
         /*data[6]: 电机温度*/
         temperature_ = static_cast<float>(data[6]);
@@ -144,7 +145,6 @@ private:
 
     static constexpr float kCountPerRound = 8192.0f;
     static constexpr float kCountPerHalfRound = 4096.0f;
-    static constexpr float kCurToTorque = 0.3f;  //转矩常数，单位N*m/A，这里是以DJI3508电机为准填的0.3，但是这玩意不同电机是不一样的，按理说应该作为一个初始化参数传进来，但是由于我们只用3508电机，所以就先这样吧。
     uint16_t encoder_offset_{0U};
     uint16_t encoder_{0U};
     uint16_t last_encoder_{0U};

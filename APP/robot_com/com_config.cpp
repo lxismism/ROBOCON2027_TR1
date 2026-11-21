@@ -196,10 +196,12 @@ void MotorsAllInit(){
     Derivative_On_Measurement | INCREATEMENT_OF_OUT, 0.1f,
     5.0f, 0.0f, 0.0f, 2000.0f, 2000.0f, Derivative_On_Measurement, 0.1f, 10000.0f);
     
-    lift_motor.deg_with_speed_init(400.0f, 5000.0f, 0.0f, 20000.0f, 20000.0f,
-    Derivative_On_Measurement | INCREATEMENT_OF_OUT | OutputFilter, 0.1f,
-    15.0f, 0.0f, 0.5f, 2800.0f, 2800.0f,
-    Derivative_On_Measurement, 1.0f, 2800.0f, 0.01f);
+    // lift_motor.deg_with_speed_init(400.0f, 5000.0f, 0.0f, 20000.0f, 20000.0f,
+    // Derivative_On_Measurement | INCREATEMENT_OF_OUT | OutputFilter, 0.1f,
+    // 15.0f, 0.0f, 0.5f, 2800.0f, 2800.0f,
+    // Derivative_On_Measurement, 1.0f, 2800.0f, 0.01f);
+
+    // lift_motor.mit_init(0.0f, 0.0f, 6.0f, 1.0f);
 
 }
 

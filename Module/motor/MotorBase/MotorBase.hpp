@@ -13,6 +13,7 @@
 
 #include "Canbus.hpp"
 #include "pid_controller.hpp"
+#include "mit_controller.hpp"
 #include "math_utils.hpp"
 #include "ramp_planner.hpp"
 
@@ -49,6 +50,12 @@ public:
         ref_deg_speed_ = deg_speed;
     }
 
+    void setMit(float ref_deg, float ref_deg_speed, float ref_torque){
+        ref_deg_ = ref_deg;
+        ref_deg_speed_ = ref_deg_speed;
+        ref_torque_ = ref_torque;
+    }
+
 
     void deg_init(float speed_kp, float speed_ki, float speed_kd, float speed_max_out, float speed_max_IL,
         float pid_speed_improve, float speed_deadband,
@@ -62,6 +69,8 @@ public:
         float pid_speed_improve, float speed_deadband,
         float deg_kp, float deg_ki, float deg_kd, float max_deg, float deg_max_IL,
         float pid_deg_improve, float deg_deadband, float a_max, float output_filter_rc = 0.0f);
+
+    void mit_init(float kp, float kd, float Maxout, float DeadBand);
 
     
 
@@ -81,6 +90,7 @@ protected:
     float ref_deg_{0.0f};
     float ramp_deg_{0.0f};
     float ramp_deg_speed_{0.0f};
+    float ref_torque_{};
     
     float max_cmd_{99999.0f};
     float reduction_ratio_{1.0f};
@@ -91,7 +101,7 @@ protected:
     float torque_{0.0f};        //输出轴扭矩
     float temperature_{0.0f};
 
-    
+    float kCurToTorque_{};       //转矩常数，单位N*m/A
 
     virtual bool isMotorOffline() const{
         return false;
@@ -100,6 +110,7 @@ protected:
 private:
     PID_t deg_speed_pid_{};
     PID_t deg_pid_{};
+    MIT_t mit_{};
     S_RampPlanner deg_planner_{};
     OutputType output_type_{};
     void pidDegUpdate(void) {
@@ -118,13 +129,18 @@ private:
     }
 
     void mitUpdate(void){
-
+        setCmd(MIT_Calculate(&mit_, ref_deg_,sum_deg_, 
+            ref_deg_speed_, deg_speed_, ref_torque_) / kCurToTorque_ * 1000.0f); //因为电流单位统一用mA，所以在这里换单位        
     }
 
     void resetPids(void){
         PID_Reset(&deg_pid_);
         PID_Reset(&deg_speed_pid_);
     }    
+
+    void resetMits(void){
+        MIT_Reset(&mit_);
+    }
 
 
 };
