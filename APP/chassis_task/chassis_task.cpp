@@ -136,7 +136,7 @@ void ChassisForManual(){
     const float yaw_now = chassis_FK_pose_msg.yaw_deg;                 // 窗口值 [-180,180)
     const float yaw_ref = yaw_now + math_utils::WrapAngle(
                                     chassis_cmd_msg.yaw_deg - yaw_now, -180.0f, 180.0f);
-    twist.deg_omega = PID_Calculate(&pid_deg_pos, yaw_now, yaw_ref, chassis_cmd_msg.yaw_deg_speed);
+    twist.deg_omega = PID_Calculate(&pid_deg_pos, yaw_now, yaw_ref);
 
     SteerChassis_solver.run(twist);
 }

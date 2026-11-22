@@ -173,7 +173,6 @@ void PurelyManualProcess(float dt){
     math_utils::Clamp(manual_yaw_deg_speed, -Max_Chassis_cmds.yaw_deg, Max_Chassis_cmds.yaw_deg);
 
     chassis_cmd_msg.yaw_deg += manual_yaw_deg_speed * dt;
-    chassis_cmd_msg.yaw_deg_speed = manual_yaw_deg_speed;
 
 
 
