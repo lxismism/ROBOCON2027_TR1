@@ -31,7 +31,6 @@ static pub_chassis_FK_pose chassis_FK_pose_msg{};
 
 uint32_t dwt_cnt{};
 bool state_machine_block{false};
-float manual_yaw_deg_speed{};
 
 static constexpr pub_chassis_cmd Max_Chassis_cmds = {ControlMode::PURELY_MANUAL ,1.5f, 1.5f, 180.0f};
 
@@ -47,6 +46,7 @@ enum class AutomaticState : uint8_t {
     STEP2 = 1,
     STEP3 = 2,
     STEP4 = 3,
+    STEP5 = 4,
 };
 AutomaticState automaticState = AutomaticState::STEP1;
 
@@ -78,7 +78,7 @@ void controlTask(void *argument){
             }
         }
         
-        vTaskDelayUntil(&current, 5);
+        vTaskDelayUntil(&current, 1);
     }
 }
 
@@ -126,13 +126,16 @@ void AutomaticProcess(float dt){
                 chassis_cmd_msg.yaw_deg = chassis_FK_pose_msg.yaw_deg;
             } break;
             case AutomaticState::STEP2 : {
-                chassis_cmd_msg.x_tar -= 0.5f;
+                chassis_cmd_msg.yaw_deg += 90.0f;
             } break;
             case AutomaticState::STEP3 : {
-                chassis_cmd_msg.y_tar += 0.5f;
+                chassis_cmd_msg.yaw_deg -= 90.0f;
             } break; 
             case AutomaticState::STEP4 : {
                 chassis_cmd_msg.yaw_deg += 90.0f;
+            } break;
+            case AutomaticState::STEP5 : {
+                chassis_cmd_msg.yaw_deg -= 90.0f;
             } break;
 
         }
@@ -156,7 +159,9 @@ void PurelyManualProcess(float dt){
         kChannelValueMin, kChannelValueMax,
         -Max_Chassis_cmds.y_tar, Max_Chassis_cmds.y_tar);
 
-    manual_yaw_deg_speed = 
+
+
+    float manual_yaw_deg_speed = 
     std::abs(static_cast<float>(rc_data_msg.joyRHori) - kChannelValueMid) < kJoyDeadBand ? 
     0.0f :
     math_utils::Map(static_cast<float>(rc_data_msg.joyRHori),
@@ -168,6 +173,7 @@ void PurelyManualProcess(float dt){
     math_utils::Clamp(manual_yaw_deg_speed, -Max_Chassis_cmds.yaw_deg, Max_Chassis_cmds.yaw_deg);
 
     chassis_cmd_msg.yaw_deg += manual_yaw_deg_speed * dt;
+    chassis_cmd_msg.yaw_deg_speed = manual_yaw_deg_speed;
 
 
 
@@ -188,9 +194,11 @@ void nextStep(){
         } break;
         case AutomaticState::STEP3 : {
             automaticState = AutomaticState::STEP4;          
-
         } break; 
         case AutomaticState::STEP4 : {
+            automaticState = AutomaticState::STEP5;          
+        } break;
+        case AutomaticState::STEP5 : {
             automaticState = AutomaticState::STEP1;          
         } break;
                  

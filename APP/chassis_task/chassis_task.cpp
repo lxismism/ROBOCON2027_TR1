@@ -39,19 +39,19 @@ static pub_chassis_cmd chassis_cmd_msg{};
 static TypedTopicSubscriber<pub_imu_data> imu_data_sub("imu_data", 8U);
 static pub_imu_data imu_data_msg{};
 
-PID_t pid_x_pos{.Kp = 2.5f, .Ki = 0.5f, .Kd = 0.1f, 
+PID_t pid_x_pos{.Kp = 0.5f, .Ki = 0.0f, .Kd = 0.0f, 
     .IntegralLimit = 1.5f, .Maxout = 1.5f, .DeadBand = 0.01f, .Improve = Derivative_On_Measurement};
-PID_t pid_y_pos{.Kp = 2.5f, .Ki = 0.5f, .Kd = 0.1f, 
+PID_t pid_y_pos{.Kp = 0.5f, .Ki = 0.0f, .Kd = 0.0f, 
     .IntegralLimit = 1.5f, .Maxout = 1.5f, .DeadBand = 0.01f, .Improve = Derivative_On_Measurement};
-PID_t pid_deg_pos{.Kp = 2.5f, .Ki = 0.5f, .Kd = 0.2f, 
-    .IntegralLimit = 360.0f, .Maxout = 720.0f, .DeadBand = 0.01f, .Improve = Derivative_On_Measurement};
+PID_t pid_deg_pos{.Kp = 2.0f, .Ki = 0.1f, .Kd = 0.0f, 
+    .IntegralLimit = 720.0f, .Maxout = 720.0f, .DeadBand = 0.01f, .Improve = Derivative_On_Measurement};
 S_RampPlanner planner_x{};
 S_RampPlanner planner_y{};
 S_RampPlanner planner_yaw{};
 
 static constexpr float kXMaxAccel = 4.75f;
 static constexpr float kYMaxAccel = 4.75f;
-static constexpr float kYawMaxAccel = 1800.0f;
+static constexpr float kYawMaxAccel = 2700.0f;
 
 
 void ChassisForAuto();
@@ -136,7 +136,7 @@ void ChassisForManual(){
     const float yaw_now = chassis_FK_pose_msg.yaw_deg;                 // 窗口值 [-180,180)
     const float yaw_ref = yaw_now + math_utils::WrapAngle(
                                     chassis_cmd_msg.yaw_deg - yaw_now, -180.0f, 180.0f);
-    twist.deg_omega = PID_Calculate(&pid_deg_pos, yaw_now, yaw_ref);
+    twist.deg_omega = PID_Calculate(&pid_deg_pos, yaw_now, yaw_ref, chassis_cmd_msg.yaw_deg_speed);
 
     SteerChassis_solver.run(twist);
 }

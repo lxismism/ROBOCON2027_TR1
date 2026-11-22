@@ -20,6 +20,7 @@
 #include "chassis_solution.hpp"
 #include <stdio.h>
 #include "dmMotor.hpp"
+#include "math_utils.hpp"
 
 osThreadId_t Debug2_TaskHandle;
 
@@ -64,6 +65,7 @@ void debug2Task(void *argument){
     for(;;){
 
         (void)chassis_FK_pose_sub.TryGet(&chassis_FK_pose_msg);
+        (void)chassis_cmd_sub.TryGet(&chassis_cmd_msg);
         printChassisCurse();
         vTaskDelayUntil(&currentTime, 1);
     }
@@ -71,6 +73,7 @@ void debug2Task(void *argument){
 }
 
 void printChassisCurse(){
+    
     printf("%.6f,%.6f,%.6f,%.6f,%.6f,%.6f\r\n",chassis_FK_pose_msg.x, chassis_FK_pose_msg.y, chassis_FK_pose_msg.yaw_deg,chassis_cmd_msg.x_tar, chassis_cmd_msg.y_tar, chassis_cmd_msg.yaw_deg);
 }
 
