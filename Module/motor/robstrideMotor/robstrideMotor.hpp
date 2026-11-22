@@ -35,19 +35,9 @@ public:
                 kd_ = kd;
                 max_cmd_ = max_cmd;
                 limit_min_deg_ = limit_min_deg;
-                limit_max_deg_ = limit_max_deg;
-                output_type_ = OutputType::NONE;
+                limit_max_deg_ = limit_max_deg;               
             }
 
-    void setMIT(float pos_deg, float kp, float kd,
-                float torque = 0.0f, float speed_deg_s = 0.0f)
-    {
-        setDeg(pos_deg);           
-        setDegSpeed(speed_deg_s);  
-        setMotorCmd(torque);            
-        kp_ = kp;
-        kd_ = kd;
-    }
 
     bool isEnabled() const { return is_enabled_; }
     uint8_t getModeState() const { return mode_state_; }
