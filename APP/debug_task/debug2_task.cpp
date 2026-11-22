@@ -19,6 +19,8 @@
 #include "com_config.h"
 #include "chassis_solution.hpp"
 #include <stdio.h>
+#include "dmMotor.hpp"
+#include "math_utils.hpp"
 
 osThreadId_t Debug2_TaskHandle;
 
@@ -37,18 +39,42 @@ extern PhotoGate chassis_photogate2;
 extern PhotoGate chassis_photogate3;
 extern PhotoGate chassis_photogate4;
 
+extern DM4310Motor wrist_motor;
+extern C610Motor extend_motor;
+extern C620Motor lift_motor;
+
+
+static TypedTopicSubscriber<pub_chassis_FK_pose> chassis_FK_pose_sub("chassis_FK_pose", 8U);
+static pub_chassis_FK_pose chassis_FK_pose_msg{};
+
+static TypedTopicSubscriber<pub_chassis_cmd> chassis_cmd_sub("chassis_cmd", 8U);
+static pub_chassis_cmd chassis_cmd_msg{};
+
 uint32_t rising{};
 uint32_t falling{};
+
+void printChassisCurse();
+
+// float mit_ref_deg{};
+// float mit_ref_speed{};
+// float mit_ref_torque{};
 
 void debug2Task(void *argument){
     TickType_t currentTime = xTaskGetTickCount();
 
     for(;;){
 
-
-        vTaskDelayUntil(&currentTime, 20);
+        (void)chassis_FK_pose_sub.TryGet(&chassis_FK_pose_msg);
+        (void)chassis_cmd_sub.TryGet(&chassis_cmd_msg);
+        printChassisCurse();
+        vTaskDelayUntil(&currentTime, 1);
     }
 
+}
+
+void printChassisCurse(){
+    
+    printf("%.6f,%.6f,%.6f,%.6f,%.6f,%.6f\r\n",chassis_FK_pose_msg.x, chassis_FK_pose_msg.y, chassis_FK_pose_msg.yaw_deg,chassis_cmd_msg.x_tar, chassis_cmd_msg.y_tar, chassis_cmd_msg.yaw_deg);
 }
 
 void printDirDegSpeedCurse(){

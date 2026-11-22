@@ -1,6 +1,6 @@
 /**
  * @file vescMotor.hpp
- * @author your name (you@domain.com)
+ * @author lxlx (1729649497@qq.com)
  * @brief 
  * @version 0.1
  * @date 2026-10-10
@@ -13,7 +13,7 @@
 
 #include "MotorBase.hpp"
 #include "CanBus.hpp"
-#include "pid_controller.h"
+#include "pid_controller.hpp"
 
 
 class VESCMotor : public CanDevice , public MotorBase {
@@ -40,46 +40,16 @@ public:
         CAN_PACKET_STATUS_6 = 58U
     };
 
-    VESCMotor(CanBus *manager, uint32_t id, const OutputType output_type, 
-        const uint8_t command_id = CAN_PACKET_SET_RPM, const uint8_t status_id = CAN_PACKET_STATUS,
-        float num_of_pole_pairs = 21.0f, float reduction = 1.0f, float max_cmd = 20000.0f, float output_filter_rc = 0.0f,
-        float speed_kp=0.0f, float speed_ki=0.0f, float speed_kd=0.0f, float speed_max_out = 20000.0f, float speed_max_IL = 20000.0f,
-        float pid_speed_improve = NONE, float speed_deadband = 0.001f,
-        float deg_kp=0.0f, float deg_ki=0.0f, float deg_kd=0.0f, float max_deg=2000.0f, float deg_max_IL=2000.0f,
-        float pid_deg_improve = NONE, float deg_deadband = 0.001f)
+    VESCMotor(CanBus *manager, uint32_t id, const uint8_t command_id = CAN_PACKET_SET_RPM, const uint8_t status_id = CAN_PACKET_STATUS,
+        float num_of_pole_pairs = 21.0f, float reduction = 1.0f, float max_cmd = 20000.0f)
         : CanDevice(manager, id, true, id, true){
 
                 num_of_pole_pairs_ = num_of_pole_pairs;
                 reduction_ratio_ = reduction;
                 max_cmd_ = max_cmd;
-                output_type_ = output_type;
                 command_id_ = command_id;
                 status_id_ = status_id;
-
-                deg_speed_pid_.Kp = speed_kp;
-                deg_speed_pid_.Ki = speed_ki;
-                deg_speed_pid_.Kd = speed_kd;
-                deg_speed_pid_.Maxout = speed_max_out;
-                deg_speed_pid_.IntegralLimit = speed_max_IL;
-
-                deg_speed_pid_.Output_LPF_RC = output_filter_rc;
-                deg_speed_pid_.Improve = pid_speed_improve;
-                deg_speed_pid_.DeadBand = speed_deadband;
-                
-                deg_pid_.Kp = deg_kp;
-                deg_pid_.Ki = deg_ki;
-                deg_pid_.Kd = deg_kd;
-                deg_pid_.Maxout = max_deg;
-                deg_pid_.IntegralLimit = deg_max_IL;
-
-
-                deg_pid_.Output_LPF_RC = output_filter_rc;
-                deg_pid_.Improve = pid_deg_improve;
-                deg_pid_.DeadBand = deg_deadband;
-                
-
             }
-
 
     uint8_t getCommandID(){ return command_id_; }
 
@@ -87,7 +57,21 @@ public:
 
         if(isOffline()) return false;
 
-        int32_t command = static_cast<int32_t>(cmdTrans());
+        int32_t command = 0;
+
+        switch (command_id_) {
+            
+            case CAN_PACKET_SET_CURRENT :{
+                command = static_cast<int32_t>(cmdTrans());
+            }break;
+
+            case CAN_PACKET_SET_RPM :{
+                command = static_cast<int32_t>(ref_deg_speed_ * static_cast<float>(num_of_pole_pairs_) * kDPSToRPM);
+            }break;         
+
+        }
+
+        
         data[0] = static_cast<uint8_t>((command >> 24) & 0xFF);
         data[1] = static_cast<uint8_t>((command >> 16) & 0xFF);
         data[2] = static_cast<uint8_t>((command >>  8) & 0xFF);
@@ -105,7 +89,7 @@ public:
                                             (data[2] <<  8) |
                                             data[3]);
         /*RPM = ERPM / num_of_pole_pairs(极对数)*/
-        deg_speed_ = static_cast<float>(ERPM)  * RPM_2_DEG_PER_SEC / num_of_pole_pairs_;
+        deg_speed_ = static_cast<float>(ERPM)  * kRPMToDPS / num_of_pole_pairs_;
         
         /*data[4]~data[5]: 电流，缩放因子为10*/
         int16_t raw_current = static_cast<int16_t>((data[4] << 8) | data[5]);
@@ -127,27 +111,12 @@ public:
 
     float cmdTrans() { return cmd_ ; }
     
-    void computeOutput(void){
 
-        switch (command_id_) {
-            case CAN_PACKET_SET_CURRENT : {
-                if(!isOffline()){
-                    if(output_type_ == OutputType::DEGREE ) pidDegUpdate();
-                    if(output_type_ != OutputType::NONE) pidDegSpeedUpdate();
-                    //目前只做了串级pid
-                } else {
-                    resetPids();
-                }
-            }break;
-
-            case CAN_PACKET_SET_RPM : {
-                if(!isOffline()){
-                    cmd_ = ref_deg_speed_ * static_cast<float>(num_of_pole_pairs_) / RPM_2_DEG_PER_SEC;
-                }
-            }
-        }
-
+protected:
+    bool isMotorOffline() const override{
+        return isOffline();
     }
+
 private:
     uint8_t command_id_;
     uint8_t status_id_;

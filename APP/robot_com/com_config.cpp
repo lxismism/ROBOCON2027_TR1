@@ -55,29 +55,14 @@ std::array<PhotoGate*, kWheelNum> chassis_photogates
 osThreadId_t can1Send_TaskHandle;
 CanBus fdcan1_bus(hfdcan1);
 
-VESCMotor chassis_drivemotor1(&fdcan1_bus, 101, MotorBase::OutputType::SPEED, 
-    VESCMotor::CAN_PACKET_SET_RPM, VESCMotor::CAN_PACKET_STATUS,
-    21.0f, 1.0f, 20000.0f, 0.0f,
-    7.0f, 5.0f, 0.17f, 20000.0f, 20000.0f,
-    Derivative_On_Measurement | INCREATEMENT_OF_OUT, 0.1f);
-
-VESCMotor chassis_drivemotor2(&fdcan1_bus, 102, MotorBase::OutputType::SPEED, 
-    VESCMotor::CAN_PACKET_SET_RPM,VESCMotor::CAN_PACKET_STATUS,
-    21.0f,1.0f, 20000.0f, 0.0f,
-    7.0f, 5.0f, 0.17f, 20000.0f, 20000.0f,
-    Derivative_On_Measurement | INCREATEMENT_OF_OUT, 0.1f);
-
-VESCMotor chassis_drivemotor3(&fdcan1_bus, 103, MotorBase::OutputType::SPEED, 
-    VESCMotor::CAN_PACKET_SET_RPM, VESCMotor::CAN_PACKET_STATUS,
-    21.0f,1.0f, 20000.0f, 0.00f,
-    7.0f, 5.0f, 0.17f, 20000.0f, 20000.0f,
-    Derivative_On_Measurement | INCREATEMENT_OF_OUT, 0.1f);
-
-VESCMotor chassis_drivemotor4(&fdcan1_bus, 104, MotorBase::OutputType::SPEED, 
-    VESCMotor::CAN_PACKET_SET_RPM, VESCMotor::CAN_PACKET_STATUS,
-    21.0f,1.0f, 20000.0f, 0.0f,
-    7.0f, 5.0f, 0.17f, 20000.0f, 20000.0f,
-    Derivative_On_Measurement | INCREATEMENT_OF_OUT, 0.1f);
+VESCMotor chassis_drivemotor1(&fdcan1_bus, 101, 
+    VESCMotor::CAN_PACKET_SET_RPM, VESCMotor::CAN_PACKET_STATUS);
+VESCMotor chassis_drivemotor2(&fdcan1_bus, 102,
+    VESCMotor::CAN_PACKET_SET_RPM,VESCMotor::CAN_PACKET_STATUS);
+VESCMotor chassis_drivemotor3(&fdcan1_bus, 103,
+    VESCMotor::CAN_PACKET_SET_RPM, VESCMotor::CAN_PACKET_STATUS);
+VESCMotor chassis_drivemotor4(&fdcan1_bus, 104,
+    VESCMotor::CAN_PACKET_SET_RPM, VESCMotor::CAN_PACKET_STATUS);
 
 
 
@@ -94,33 +79,10 @@ std::array<VESCMotor*, 4> chassis_drivemotors{&chassis_drivemotor1, &chassis_dri
 osThreadId_t can2Send_TaskHandle;
 CanBus fdcan2_bus(hfdcan2);
 
-C620Motor chassis_dirmotor1(&fdcan2_bus, 0x201, false, 0x200, false, 
-    MotorBase::OutputType::DEGREE, 8.0f,20000.0f, 0.01f,
-    400.0f, 5000.0f, 0.0f, 20000.0f, 20000.0f,
-    Derivative_On_Measurement | INCREATEMENT_OF_OUT | OutputFilter, 0.1f,
-    15.0f, 0.0f, 0.5f, 6000.0f, 6000.0f,
-    Derivative_On_Measurement, 0.1f);
-
-C620Motor chassis_dirmotor2(&fdcan2_bus, 0x202, false, 0x200, false, 
-    MotorBase::OutputType::DEGREE, 8.0f,20000.0f, 0.01f,
-    400.0f, 5000.0f, 0.0f, 20000.0f, 20000.0f,
-    Derivative_On_Measurement | INCREATEMENT_OF_OUT | OutputFilter, 0.1f,
-    15.0f, 0.0f, 0.5f, 6000.0f, 6000.0f,
-    Derivative_On_Measurement, 0.1f);
-
-C620Motor chassis_dirmotor3(&fdcan2_bus, 0x203, false, 0x200, false, 
-    MotorBase::OutputType::DEGREE, 8.0f,20000.0f, 0.01f,
-    400.0f, 5000.0f, 0.0f, 20000.0f, 20000.0f,
-    Derivative_On_Measurement | INCREATEMENT_OF_OUT | OutputFilter, 0.1f,
-    15.0f, 0.0f, 0.5f, 6000.0f, 6000.0f,
-    Derivative_On_Measurement, 0.1f);
-
-C620Motor chassis_dirmotor4(&fdcan2_bus, 0x204, false, 0x200, false, 
-    MotorBase::OutputType::DEGREE, 8.0f,20000.0f, 0.01f,
-    400.0f, 5000.0f, 0.0f, 20000.0f, 20000.0f,
-    Derivative_On_Measurement | INCREATEMENT_OF_OUT | OutputFilter, 0.1f,
-    15.0f, 0.0f, 0.5f, 6000.0f, 6000.0f,
-    Derivative_On_Measurement, 0.1f);
+C620Motor chassis_dirmotor1(&fdcan2_bus, 0x201, false, 0x200, false, 8.0f);
+C620Motor chassis_dirmotor2(&fdcan2_bus, 0x202, false, 0x200, false, 8.0f);
+C620Motor chassis_dirmotor3(&fdcan2_bus, 0x203, false, 0x200, false, 8.0f);
+C620Motor chassis_dirmotor4(&fdcan2_bus, 0x204, false, 0x200, false, 8.0f);
 
 std::array<C620Motor*, 4> chassis_dirmotors{&chassis_dirmotor1, &chassis_dirmotor2,
                                             &chassis_dirmotor3, &chassis_dirmotor4};
@@ -140,22 +102,11 @@ CanBus fdcan3_bus(hfdcan3);
 
 DM4310Motor wrist_motor(&fdcan3_bus, 0x06, 0x06, DM4310Motor::PosWithSpeed);
 
-C610Motor extend_motor(&fdcan3_bus, 0x202, false, 0x200, false, 
-    MotorBase::OutputType::DEGREE, 36.0f,10000.0f, 0.005f,
-    16.0f, 5.0f, 0.0f, 10000.0f, 10000.0f,
-    Derivative_On_Measurement | INCREATEMENT_OF_OUT, 0.1f,
-    5.0f);
+C610Motor extend_motor(&fdcan3_bus, 0x202, false, 0x200, false);
 
-
-C620Motor lift_motor(&fdcan3_bus, 0x201, false, 0x200, false, 
-    MotorBase::OutputType::DEGREE, 3591.0f / 187.0f,20000.0f, 0.01f,
-    400.0f, 5000.0f, 0.0f, 20000.0f, 20000.0f,
-    Derivative_On_Measurement | INCREATEMENT_OF_OUT | OutputFilter, 0.1f,
-    20.0f, 0.0f, 0.0f, 6000.0f, 6000.0f,
-    Derivative_On_Measurement, 1.0f);
+C620Motor lift_motor(&fdcan3_bus, 0x201, false, 0x200, false);
 
 /*-------------------------------------fdcan3----------------------------------------*/
-
 
 /*-------------------------------------usart2----------------------------------------*/
 osThreadId_t uart2Process_TaskHandle;
@@ -220,8 +171,43 @@ static pub_vision_pose vision_pose_msg{};
 
 /*--------------------------------------usb------------------------------------------*/
 
+void MotorsAllInit(){
+    chassis_dirmotor1.deg_with_speed_init(400.0f, 5000.0f, 0.0f, 20000.0f, 20000.0f,
+    Derivative_On_Measurement | INCREATEMENT_OF_OUT | OutputFilter, 0.1f,
+    15.0f, 0.0f, 0.5f, 2800.0f, 2800.0f,
+    Derivative_On_Measurement, 1.0f, 2800.0f, 0.01f);
+
+    chassis_dirmotor2.deg_with_speed_init(400.0f, 5000.0f, 0.0f, 20000.0f, 20000.0f,
+    Derivative_On_Measurement | INCREATEMENT_OF_OUT | OutputFilter, 0.1f,
+    15.0f, 0.0f, 0.5f, 2800.0f, 2800.0f,
+    Derivative_On_Measurement, 1.0f, 2800.0f, 0.01f);
+
+    chassis_dirmotor3.deg_with_speed_init(400.0f, 5000.0f, 0.0f, 20000.0f, 20000.0f,
+    Derivative_On_Measurement | INCREATEMENT_OF_OUT | OutputFilter, 0.1f,
+    15.0f, 0.0f, 0.5f, 2800.0f, 2800.0f,
+    Derivative_On_Measurement, 1.0f, 2800.0f, 0.01f);
+
+    chassis_dirmotor4.deg_with_speed_init(400.0f, 5000.0f, 0.0f, 20000.0f, 20000.0f,
+    Derivative_On_Measurement | INCREATEMENT_OF_OUT | OutputFilter, 0.1f,
+    15.0f, 0.0f, 0.5f, 2800.0f, 2800.0f,
+    Derivative_On_Measurement, 1.0f, 2800.0f, 0.01f);
+
+    extend_motor.deg_with_speed_init(16.0f, 5.0f, 0.0f, 10000.0f, 10000.0f,
+    Derivative_On_Measurement | INCREATEMENT_OF_OUT, 0.1f,
+    5.0f, 0.0f, 0.0f, 2000.0f, 2000.0f, Derivative_On_Measurement, 0.1f, 10000.0f);
+    
+    // lift_motor.deg_with_speed_init(400.0f, 5000.0f, 0.0f, 20000.0f, 20000.0f,
+    // Derivative_On_Measurement | INCREATEMENT_OF_OUT | OutputFilter, 0.1f,
+    // 15.0f, 0.0f, 0.5f, 2800.0f, 2800.0f,
+    // Derivative_On_Measurement, 1.0f, 2800.0f, 0.01f);
+
+    // lift_motor.mit_init(0.0f, 0.0f, 6.0f, 1.0f);
+
+}
 
 uint8_t comServiceInit(){
+
+    MotorsAllInit();
 
     canFilterInit(&hfdcan1, FDCAN_EXTENDED_ID, 0, 0, FDCAN_FILTER_TO_RXFIFO0, 0);
     canFilterInit(&hfdcan1, FDCAN_STANDARD_ID, 0, 0, FDCAN_FILTER_TO_RXFIFO1, 1);
@@ -319,8 +305,6 @@ void uart3RxProcessTask(void *argument){
         while(uart3_port.Read(packet)){
             for(uint8_t i = 0; i < packet.len; ++i){
                 if(rm_pocket.processByte(packet.data[i])){
-
-                    
 
                     const auto &rc_data = rm_pocket.getRCState();
                     rc_data_msg.joyRHori = rc_data.joyRHori;

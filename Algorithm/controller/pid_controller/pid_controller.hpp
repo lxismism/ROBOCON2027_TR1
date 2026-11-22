@@ -9,14 +9,9 @@
  * 
  */
 
-#ifndef PID_CONTROLLER_H
-#define PID_CONTROLLER_H
+#pragma once
 
-#ifdef __cplusplus
-extern "C"{
-#endif
-
-#include <stdint.h>
+#include <cstdint>
 
 typedef enum pid_Inprovement_e{
     NONE = 0x00,            /*不使用任何优化*/
@@ -61,12 +56,6 @@ typedef struct{
     uint16_t Improve;
 } PID_t;
 
-float PID_Calculate(PID_t *pid, float measure, float ref);
+float PID_Calculate(PID_t *pid, float measure, float ref, float external_ff = 0.0f);    //外部前馈必须是被控量的导数,必须要先明白外部前馈的物理意义
 void PID_Reset(PID_t *pid);
 
-#ifdef __cplusplus
-}
-#endif
-
-
-#endif

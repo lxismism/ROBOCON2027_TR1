@@ -30,7 +30,6 @@ public:
 
                 reduction_ratio_ = reduction;
                 max_cmd_ = max_cmd;
-                output_type_ = OutputType::NONE;
                 control_mode_ = control_mode;
 
                 switch (control_mode) {
@@ -53,14 +52,14 @@ public:
         /*data[1]~data[2]: pos的高8位和低8位*/
         const uint16_t raw_pos = static_cast<uint16_t>((data[1] << 8U) | data[2]);
         const float raw_rad = math_utils::Map(static_cast<float>(raw_pos), 0.0f, 65535.0f, kRadMin, kRadMax);
-        sum_deg_ = raw_rad * RAD_2_DEG;
+        sum_deg_ = raw_rad * kRadToDeg;
         single_deg_ = math_utils::WrapAngle(sum_deg_, -180.0f, 180.0f);
 
         /*data[3]+data[4]高4位，组成一个12位的数据表示角速度*/
         const uint16_t raw_speed = static_cast<uint16_t>((data[3] << 4U) | (data[4] >> 4U));
         const float raw_radspeed = math_utils::Map(static_cast<float>(raw_speed), 
             0.0f, 4095.0f, kRadspeedMin, kRadspeedMax);
-        deg_speed_ = raw_radspeed * RAD_2_DEG;
+        deg_speed_ = raw_radspeed * kRadToDeg;
 
         /*data[4]低4位 + data[5]，组成一个12位的数据表示扭矩*/
         const uint16_t raw_torque = static_cast<uint16_t>(((data[4] & 0x0F) << 8U) | data[5]);
@@ -95,7 +94,11 @@ public:
     }
 
 
-
+protected:
+    bool isMotorOffline() const override{
+        return isOffline();
+    }
+    
 private:
     static constexpr float kRadMin = -12.5f;   // rad
     static constexpr float kRadMax =  12.5f;
@@ -136,8 +139,8 @@ private:
     }
 
     void packPosWithSpeedCmd(uint8_t data[8]){
-        float ref_rad = ref_deg_ * DEG_2_RAD;
-        float ref_rad_speed = ref_deg_speed_ * DEG_2_RAD;
+        float ref_rad = ref_deg_ * kDegToRad;
+        float ref_rad_speed = ref_deg_speed_ * kDegToRad;
 
         const uint8_t *p_des = reinterpret_cast<uint8_t*>(&ref_rad);
         const uint8_t *v_des = reinterpret_cast<uint8_t*>(&ref_rad_speed);
