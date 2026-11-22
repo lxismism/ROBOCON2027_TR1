@@ -65,7 +65,6 @@ void debug2Task(void *argument){
 
         (void)chassis_FK_pose_sub.TryGet(&chassis_FK_pose_msg);
         printChassisCurse();
-
         vTaskDelayUntil(&currentTime, 1);
     }
 
