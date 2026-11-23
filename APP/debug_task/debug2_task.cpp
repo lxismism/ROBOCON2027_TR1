@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include "dmMotor.hpp"
 #include "math_utils.hpp"
+#include "pid_controller.hpp"
 
 osThreadId_t Debug2_TaskHandle;
 
@@ -43,6 +44,10 @@ extern DM4310Motor wrist_motor;
 extern C610Motor extend_motor;
 extern C620Motor lift_motor;
 
+extern PID_t pid_x_pos;        //在 chassis_task.cpp 中定义
+extern PID_t pid_y_pos;
+extern PID_t pid_deg_pos;
+
 
 static TypedTopicSubscriber<pub_chassis_FK_pose> chassis_FK_pose_sub("chassis_FK_pose", 8U);
 static pub_chassis_FK_pose chassis_FK_pose_msg{};
@@ -54,6 +59,7 @@ uint32_t rising{};
 uint32_t falling{};
 
 void printChassisCurse();
+
 
 // float mit_ref_deg{};
 // float mit_ref_speed{};
@@ -72,10 +78,47 @@ void debug2Task(void *argument){
 
 }
 
-void printChassisCurse(){
+// void printChassisCurse(){
     
-    printf("%.6f,%.6f,%.6f,%.6f,%.6f,%.6f\r\n",chassis_FK_pose_msg.x, chassis_FK_pose_msg.y, chassis_FK_pose_msg.yaw_deg,chassis_cmd_msg.x_tar, chassis_cmd_msg.y_tar, chassis_cmd_msg.yaw_deg);
+//     printf("%.6f,%.6f,%.6f,%.6f,%.6f,%.6f\r\n",chassis_FK_pose_msg.x, chassis_FK_pose_msg.y, chassis_FK_pose_msg.yaw_deg,chassis_cmd_msg.x_tar, chassis_cmd_msg.y_tar, chassis_cmd_msg.yaw_deg);
+// }
+
+void printChassisCurse(){
+
+    printf("%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,"      //1~8   : 四个舵向电机速度环，Ref、Measure 交替
+           "%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,"      //9~16  : 四个舵向电机角度环，Ref、Measure 交替
+           "%.3f,%.3f,"                                     //17~18 : 底盘角度环
+           "%.3f,%.3f,"                                     //19~20 : x位置环
+           "%.3f,%.3f\r\n"                                  //21~22 : y位置环
+        ,chassis_dirmotor1.getSpeedPid().Ref      //速度环目标值
+        ,chassis_dirmotor1.getSpeedPid().Measure
+        ,chassis_dirmotor2.getSpeedPid().Ref
+        ,chassis_dirmotor2.getSpeedPid().Measure
+        ,chassis_dirmotor3.getSpeedPid().Ref
+        ,chassis_dirmotor3.getSpeedPid().Measure
+        ,chassis_dirmotor4.getSpeedPid().Ref
+        ,chassis_dirmotor4.getSpeedPid().Measure
+
+        ,chassis_dirmotor1.getDegPid().Ref
+        ,chassis_dirmotor1.getDegPid().Measure
+        ,chassis_dirmotor2.getDegPid().Ref
+        ,chassis_dirmotor2.getDegPid().Measure
+        ,chassis_dirmotor3.getDegPid().Ref
+        ,chassis_dirmotor3.getDegPid().Measure
+        ,chassis_dirmotor4.getDegPid().Ref
+        ,chassis_dirmotor4.getDegPid().Measure
+
+        ,pid_deg_pos.Ref
+        ,pid_deg_pos.Measure
+
+        ,pid_x_pos.Ref
+        ,pid_x_pos.Measure
+
+        ,pid_y_pos.Ref
+        ,pid_y_pos.Measure
+    );
 }
+
 
 void printDirDegSpeedCurse(){
 

@@ -126,16 +126,16 @@ void AutomaticProcess(float dt){
                 chassis_cmd_msg.yaw_deg = chassis_FK_pose_msg.yaw_deg;
             } break;
             case AutomaticState::STEP2 : {
-                chassis_cmd_msg.yaw_deg += 90.0f;
+                chassis_cmd_msg.x_tar += 1.0f;
             } break;
             case AutomaticState::STEP3 : {
-                chassis_cmd_msg.yaw_deg -= 90.0f;
+                chassis_cmd_msg.x_tar -= 1.0f;
             } break; 
             case AutomaticState::STEP4 : {
-                chassis_cmd_msg.yaw_deg += 90.0f;
+                chassis_cmd_msg.y_tar += 1.0f;
             } break;
             case AutomaticState::STEP5 : {
-                chassis_cmd_msg.yaw_deg -= 90.0f;
+                chassis_cmd_msg.y_tar -= 1.0f;
             } break;
 
         }
