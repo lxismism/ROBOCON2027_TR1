@@ -43,7 +43,7 @@ PID_t pid_x_pos{.Kp = 1.0f, .Ki = 0.4f, .Kd = 0.3f,
     .IntegralLimit = 1.5f, .Maxout = 1.5f, .DeadBand = 0.01f, .Improve = Derivative_On_Measurement};
 PID_t pid_y_pos{.Kp = 1.0f, .Ki = 0.4f, .Kd = 0.3f, 
     .IntegralLimit = 1.5f, .Maxout = 1.5f, .DeadBand = 0.01f, .Improve = Derivative_On_Measurement};
-PID_t pid_deg_pos{.Kp = 10.0f, .Ki = 0.1f, .Kd = 0.0f, 
+PID_t pid_deg_pos{.Kp = 2.0f, .Ki = 0.1f, .Kd = 0.0f, 
     .IntegralLimit = 720.0f, .Maxout = 720.0f, .DeadBand = 0.01f, .Improve = Derivative_On_Measurement};
 S_RampPlanner planner_x{};
 S_RampPlanner planner_y{};
