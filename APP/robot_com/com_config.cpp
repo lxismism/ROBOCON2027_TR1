@@ -33,6 +33,7 @@
 #include "djiMotor.hpp"
 #include "vescMotor.hpp"
 #include "dmMotor.hpp"
+#include "hightorqueMotor.hpp"   /* 高擎关节模组：8 字节经典帧，位置模式 07 35 */
 
 #include "topics.hpp"
 #include "topic_pool.hpp"
@@ -106,6 +107,7 @@ C610Motor extend_motor(&fdcan3_bus, 0x202, false, 0x200, false);
 
 C620Motor lift_motor(&fdcan3_bus, 0x201, false, 0x200, false);
 
+HightorqueMotor high_torque_motor(&fdcan3_bus, 1);
 /*-------------------------------------fdcan3----------------------------------------*/
 
 /*-------------------------------------usart2----------------------------------------*/
@@ -219,6 +221,7 @@ uint8_t comServiceInit(){
 
     canFilterInit(&hfdcan3, FDCAN_STANDARD_ID, 0, 0, FDCAN_FILTER_TO_RXFIFO0, 0);
     canFilterInit(&hfdcan3, FDCAN_STANDARD_ID, 0, 0, FDCAN_FILTER_TO_RXFIFO1, 1);
+    canFilterInit(&hfdcan3, FDCAN_EXTENDED_ID, 0, 0, FDCAN_FILTER_TO_RXFIFO0, 0);
     bspCanInit(&hfdcan3);
 
     fdcan1_bus.init();
@@ -238,6 +241,7 @@ uint8_t comServiceInit(){
     fdcan3_bus.registerDevice(&extend_motor);
     fdcan3_bus.registerDevice(&wrist_motor);
     fdcan3_bus.registerDevice(&lift_motor);
+    fdcan3_bus.registerDevice(&high_torque_motor);
 
     uart2_rx_semaphore = osSemaphoreNew(1, 0, NULL);
     uart2_port.startRxDmaIdle();
@@ -490,6 +494,8 @@ void can2SendTask(void *argument){
 
 
 /*-------------------------------------fdcan3----------------------------------------*/
+volatile float    fb_pos_deg = 0.0f; 
+volatile float    speed_limit = 240.0f;
 
 void can3SendTask(void *argument){
     TickType_t current = xTaskGetTickCount();
@@ -523,7 +529,19 @@ void can3SendTask(void *argument){
                 fdcan3_bus.addCanMsg(pack);
             }
         }
-
+        //高擎电机控制
+        high_torque_motor.setPositionSpeedLimit(speed_limit);
+        high_torque_motor.setTargetPosition(fb_pos_deg);   /* 位置模式 */
+        high_torque_motor.update();
+        CanBus::ClassicPack pack{};
+        pack.dlc = FDCAN_DLC_BYTES_8;
+        if(high_torque_motor.buildTx(pack.data)){
+            pack.id   = high_torque_motor.getTxID();   /* 复用 CanDevice 基类 getter */
+            pack.type = high_torque_motor.getFrameType();
+            if(fdcan3_bus.addCanMsg(pack) != CanBus::CanError::OK){
+                high_torque_motor.notifyTxFail();   /* 高擎特有：记录入队失败 */
+            }
+        }
         vTaskDelayUntil(&current, 1);
         
     }
