@@ -73,7 +73,7 @@ void debug2Task(void *argument){
         (void)chassis_FK_pose_sub.TryGet(&chassis_FK_pose_msg);
         (void)chassis_cmd_sub.TryGet(&chassis_cmd_msg);
         printChassisCurse();
-        vTaskDelayUntil(&currentTime, 1);
+        vTaskDelayUntil(&currentTime, 20);
     }
 
 }
