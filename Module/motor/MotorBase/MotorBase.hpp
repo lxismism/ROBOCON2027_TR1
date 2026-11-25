@@ -84,6 +84,9 @@ public:
     float getTorque(void) const {return torque_; }
     float getTemperature(void) const { return temperature_; }
 
+    const PID_t& getDegPid(void) const { return deg_pid_; }             //角度环PID，调试打印用
+    const PID_t& getSpeedPid(void) const { return deg_speed_pid_; }  //速度环PID，调试打印用
+
 protected:
     float cmd_{0.0f};
     float ref_deg_speed_{0.0f};

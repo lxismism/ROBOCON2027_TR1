@@ -30,6 +30,8 @@ static TypedTopicSubscriber<pub_chassis_FK_pose> chassis_FK_pose_sub("chassis_FK
 static pub_chassis_FK_pose chassis_FK_pose_msg{};
 
 uint32_t dwt_cnt{};
+uint32_t rc_dwt_cnt{};        //记录上一次收到遥控器帧的时刻
+bool rc_dt_inited{false};     //标记 rc_dwt_cnt 是否已经初始化过
 bool state_machine_block{false};
 
 static constexpr pub_chassis_cmd Max_Chassis_cmds = {ControlMode::PURELY_MANUAL ,1.5f, 1.5f, 180.0f};
@@ -69,17 +71,27 @@ void controlTask(void *argument){
 
     for(;;){
 
-        const float dt = DWT_GetDeltaT(&dwt_cnt);
-        
-        if(dt < kMaxDt){
-            if(rc_data_sub.TryGet(&rc_data_msg)){
-                RC_Data_Process(dt);
-                chassis_cmd_pub.Publish(chassis_cmd_msg);
+    const float dt = DWT_GetDeltaT(&dwt_cnt);
+    
+    if(dt < kMaxDt){
+        if(rc_data_sub.TryGet(&rc_data_msg)){
+
+            float rc_dt = DWT_GetDeltaT(&rc_dwt_cnt);
+
+            // 第一次收到帧时 rc_dwt_cnt 还是 0，测出来是从开机到现在的总时间，
+            // 必须丢弃；帧间隔异常大（比如掉线后恢复）也丢弃，用循环周期兜底。
+            if(!rc_dt_inited || rc_dt > 0.05f){
+                rc_dt = dt;
+                rc_dt_inited = true;
             }
+
+            RC_Data_Process(rc_dt);
+            chassis_cmd_pub.Publish(chassis_cmd_msg);
         }
-        
-        vTaskDelayUntil(&current, 1);
     }
+    
+    vTaskDelayUntil(&current, 1);
+}
 }
 
 void RC_Data_Process(float dt){
@@ -126,16 +138,16 @@ void AutomaticProcess(float dt){
                 chassis_cmd_msg.yaw_deg = chassis_FK_pose_msg.yaw_deg;
             } break;
             case AutomaticState::STEP2 : {
-                chassis_cmd_msg.yaw_deg += 90.0f;
+                chassis_cmd_msg.x_tar += 1.0f;
             } break;
             case AutomaticState::STEP3 : {
-                chassis_cmd_msg.yaw_deg -= 90.0f;
+                chassis_cmd_msg.x_tar -= 1.0f;
             } break; 
             case AutomaticState::STEP4 : {
-                chassis_cmd_msg.yaw_deg += 90.0f;
+                chassis_cmd_msg.y_tar += 1.0f;
             } break;
             case AutomaticState::STEP5 : {
-                chassis_cmd_msg.yaw_deg -= 90.0f;
+                chassis_cmd_msg.y_tar -= 1.0f;
             } break;
 
         }

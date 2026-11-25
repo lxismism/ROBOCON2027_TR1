@@ -39,9 +39,9 @@ static pub_chassis_cmd chassis_cmd_msg{};
 static TypedTopicSubscriber<pub_imu_data> imu_data_sub("imu_data", 8U);
 static pub_imu_data imu_data_msg{};
 
-PID_t pid_x_pos{.Kp = 0.5f, .Ki = 0.0f, .Kd = 0.0f, 
+PID_t pid_x_pos{.Kp = 1.0f, .Ki = 0.4f, .Kd = 0.3f, 
     .IntegralLimit = 1.5f, .Maxout = 1.5f, .DeadBand = 0.01f, .Improve = Derivative_On_Measurement};
-PID_t pid_y_pos{.Kp = 0.5f, .Ki = 0.0f, .Kd = 0.0f, 
+PID_t pid_y_pos{.Kp = 1.0f, .Ki = 0.4f, .Kd = 0.3f, 
     .IntegralLimit = 1.5f, .Maxout = 1.5f, .DeadBand = 0.01f, .Improve = Derivative_On_Measurement};
 PID_t pid_deg_pos{.Kp = 2.0f, .Ki = 0.1f, .Kd = 0.0f, 
     .IntegralLimit = 720.0f, .Maxout = 720.0f, .DeadBand = 0.01f, .Improve = Derivative_On_Measurement};
