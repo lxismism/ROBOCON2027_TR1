@@ -57,8 +57,9 @@ static constexpr float kGrip2MinDeg           = -189.0f;
 static constexpr float kGrip2MaxDeg           = 0.0f;
 
 uint32_t dwt_cnt{};
+uint32_t rc_dwt_cnt{};        //记录上一次收到遥控器帧的时刻
+bool rc_dt_inited{false};     //标记 rc_dwt_cnt 是否已经初始化过
 bool state_machine_block{false};
-float manual_yaw_deg_speed{};
 
 static constexpr pub_chassis_cmd Max_Chassis_cmds = {ControlMode::PURELY_MANUAL ,1.5f, 1.5f, 180.0f};
 
@@ -74,6 +75,7 @@ enum class AutomaticState : uint8_t {
     STEP2 = 1,
     STEP3 = 2,
     STEP4 = 3,
+    STEP5 = 4,
 };
 AutomaticState automaticState = AutomaticState::STEP1;
 
@@ -142,20 +144,30 @@ void controlTask(void *argument){
     for(;;){
 
         const float dt = DWT_GetDeltaT(&dwt_cnt);
-        
+
         while(claw_state_sub.TryGet(&claw_state_msg)){
         }
         syncClawInitialPoses();
 
         if(dt < kMaxDt){
             if(rc_data_sub.TryGet(&rc_data_msg)){
-                RC_Data_Process(dt);
+
+                float rc_dt = DWT_GetDeltaT(&rc_dwt_cnt);
+
+                // 第一次收到帧时 rc_dwt_cnt 还是 0，测出来是从开机到现在的总时间，
+                // 必须丢弃；帧间隔异常大（比如掉线后恢复）也丢弃，用循环周期兜底。
+                if(!rc_dt_inited || rc_dt > 0.05f){
+                    rc_dt = dt;
+                    rc_dt_inited = true;
+                }
+
+                RC_Data_Process(rc_dt);
                 chassis_cmd_pub.Publish(chassis_cmd_msg);
                 claw_cmd_pub.Publish(claw_cmd_msg);
             }
         }
-        
-        vTaskDelayUntil(&current, 5);
+
+        vTaskDelayUntil(&current, 1);
     }
 }
 
@@ -204,13 +216,16 @@ void AutomaticProcess(float dt){
                 chassis_cmd_msg.yaw_deg = chassis_FK_pose_msg.yaw_deg;
             } break;
             case AutomaticState::STEP2 : {
-                chassis_cmd_msg.x_tar -= 0.5f;
+                chassis_cmd_msg.x_tar += 1.0f;
             } break;
             case AutomaticState::STEP3 : {
-                chassis_cmd_msg.y_tar += 0.5f;
+                chassis_cmd_msg.x_tar -= 1.0f;
             } break; 
             case AutomaticState::STEP4 : {
-                chassis_cmd_msg.yaw_deg += 90.0f;
+                chassis_cmd_msg.y_tar += 1.0f;
+            } break;
+            case AutomaticState::STEP5 : {
+                chassis_cmd_msg.y_tar -= 1.0f;
             } break;
 
         }
@@ -234,7 +249,9 @@ void PurelyManualProcess(float dt){
         kChannelValueMin, kChannelValueMax,
         -Max_Chassis_cmds.y_tar, Max_Chassis_cmds.y_tar);
 
-    manual_yaw_deg_speed = 
+
+
+    float manual_yaw_deg_speed = 
     std::abs(static_cast<float>(rc_data_msg.joyRHori) - kChannelValueMid) < kJoyDeadBand ? 
     0.0f :
     math_utils::Map(static_cast<float>(rc_data_msg.joyRHori),
@@ -302,9 +319,11 @@ void nextStep(){
         } break;
         case AutomaticState::STEP3 : {
             automaticState = AutomaticState::STEP4;          
-
         } break; 
         case AutomaticState::STEP4 : {
+            automaticState = AutomaticState::STEP5;          
+        } break;
+        case AutomaticState::STEP5 : {
             automaticState = AutomaticState::STEP1;          
         } break;
                  

@@ -20,7 +20,7 @@ extern "C"{
 #include "FreeRTOS.h"
 #include "cmsis_os2.h"
 #include "task.h"
-#include "pid_controller.h"
+#include "pid_controller.hpp"
 
 /*-----------------------------------macro------------------------------------*/
 

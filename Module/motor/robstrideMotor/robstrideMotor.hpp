@@ -35,19 +35,9 @@ public:
                 kd_ = kd;
                 max_cmd_ = max_cmd;
                 limit_min_deg_ = limit_min_deg;
-                limit_max_deg_ = limit_max_deg;
-                output_type_ = OutputType::NONE;
+                limit_max_deg_ = limit_max_deg;               
             }
 
-    void setMIT(float pos_deg, float kp, float kd,
-                float torque = 0.0f, float speed_deg_s = 0.0f)
-    {
-        setMotorDeg(pos_deg);           
-        setMotorDegSpeed(speed_deg_s);  
-        setMotorCmd(torque);            
-        kp_ = kp;
-        kd_ = kd;
-    }
 
     bool isEnabled() const { return is_enabled_; }
     uint8_t getModeState() const { return mode_state_; }
@@ -101,14 +91,14 @@ public:
         const uint16_t raw_pos = static_cast<uint16_t>((data[0] << 8U) | data[1]);
         const float raw_rad = math_utils::Map(static_cast<float>(raw_pos), 0.0f, 65535.0f,
                     kPosMinRad, kPosMaxRad);
-        sum_deg_ = raw_rad * RAD_2_DEG;
+        sum_deg_ = raw_rad * kRadToDeg;
         single_deg_ = math_utils::WrapAngle(sum_deg_, -180.0f, 180.0f);
 
         //Byte2~3: 当前角速度 [0~65535]对应-50~50 rad/s
         const uint16_t raw_speed = static_cast<uint16_t>((data[2] << 8U) | data[3]);
         const float raw_radspeed = math_utils::Map(static_cast<float>(raw_speed), 0.0f, 65535.0f,
                     kSpeedMinRad, kSpeedMaxRad);
-        deg_speed_ = raw_radspeed * RAD_2_DEG;
+        deg_speed_ = raw_radspeed * kRadToDeg;
 
         //Byte4~5: 当前扭矩 [0~65535]对应-6~6 N·m
         const uint16_t raw_torque = static_cast<uint16_t>((data[4] << 8U) | data[5]);
@@ -144,6 +134,11 @@ public:
 
         packOperationCmd(data);
         return true;
+    }
+
+protected:
+    bool isMotorOffline() const override{
+        return isOffline();
     }
 
 private:
@@ -215,8 +210,8 @@ private:
     //组装运控帧
     void packOperationCmd(uint8_t data[8]){
         math_utils::Clamp(ref_deg_, limit_min_deg_, limit_max_deg_);  //软件角度限位
-        const uint16_t raw_pos    = floatToUint(ref_deg_ * DEG_2_RAD, kPosMinRad, kPosMaxRad);
-        const uint16_t raw_speed  = floatToUint(ref_deg_speed_ * DEG_2_RAD, kSpeedMinRad, kSpeedMaxRad);
+        const uint16_t raw_pos    = floatToUint(ref_deg_ * kDegToRad, kPosMinRad, kPosMaxRad);
+        const uint16_t raw_speed  = floatToUint(ref_deg_speed_ * kDegToRad, kSpeedMinRad, kSpeedMaxRad);
         const uint16_t raw_kp     = floatToUint(kp_, kKpMin, kKpMax);
         const uint16_t raw_kd     = floatToUint(kd_, kKdMin, kKdMax);
         const uint16_t raw_torque = floatToUint(cmd_, kTorqueMin, kTorqueMax); //本驱动里cmd_为力矩前馈 单位：N·m

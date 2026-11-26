@@ -66,11 +66,11 @@ void clawTask(void *argument) {
 
         // -------------------- 夹爪 1 执行 --------------------
         if (!claw_cmd_msg.claw1.active) {
-            rise_motor.setMotorDeg(claw_state_msg.claw1.rise_deg);
+            rise_motor.setDeg(claw_state_msg.claw1.rise_deg);
             rotate_motor.setQueryOnly();
             grip_motor.setMIT(claw_state_msg.claw1.grip_deg, 0.0f, 0.0f);
         } else {
-            rise_motor.setMotorDeg(claw_cmd_msg.claw1.rise_deg);
+            rise_motor.setDeg(claw_cmd_msg.claw1.rise_deg);
 
             if (rotate_motor.hasFeedback()) {
                 rotate_motor.setPosVelTqe(claw_cmd_msg.claw1.rotate_deg,
@@ -85,18 +85,18 @@ void clawTask(void *argument) {
 
         // -------------------- 夹爪 2 执行 --------------------
         if (!claw_cmd_msg.claw2.active) {
-            rise2_motor.setMotorDeg(claw_state_msg.claw2.rise_deg);
-            rotate2_motor.setMotorDeg(claw_state_msg.claw2.rotate_deg);
-            grip2_motor.setMotorDeg(claw_state_msg.claw2.grip_deg);
-            grip2_motor.setMotorDegSpeed(kGrip2MaxSpeedDegS);
+            rise2_motor.setDeg(claw_state_msg.claw2.rise_deg);
+            rotate2_motor.setDeg(claw_state_msg.claw2.rotate_deg);
+            grip2_motor.setDeg(claw_state_msg.claw2.grip_deg);
+            grip2_motor.setDegSpeed(kGrip2MaxSpeedDegS);
         } else {
             float grip2_target_deg = claw_cmd_msg.claw2.grip_deg;
             math_utils::Clamp(grip2_target_deg, kGrip2MinDeg, kGrip2MaxDeg);
 
-            rise2_motor.setMotorDeg(claw_cmd_msg.claw2.rise_deg);
-            rotate2_motor.setMotorDeg(claw_cmd_msg.claw2.rotate_deg);
-            grip2_motor.setMotorDeg(grip2_target_deg);
-            grip2_motor.setMotorDegSpeed(kGrip2MaxSpeedDegS);
+            rise2_motor.setDeg(claw_cmd_msg.claw2.rise_deg);
+            rotate2_motor.setDeg(claw_cmd_msg.claw2.rotate_deg);
+            grip2_motor.setDeg(grip2_target_deg);
+            grip2_motor.setDegSpeed(kGrip2MaxSpeedDegS);
         }
 
         vTaskDelayUntil(&current, 5);

@@ -41,6 +41,7 @@ struct pub_chassis_cmd{
   float x_tar;
   float y_tar;
   float yaw_deg;
+  //float yaw_deg_speed;
   
 };
 

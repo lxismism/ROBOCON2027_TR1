@@ -54,7 +54,6 @@ public:
           send_div_(send_div == 0U ? 1U : send_div),
           query_every_n_(query_every_n < 2U ? 2U : query_every_n),
           frame_cnt_(query_every_n < 2U ? 2U : query_every_n) {
-        output_type_ = OutputType::NONE;
         max_cmd_ = 50.0f;
         rx_timeout_ms_ = 50U;
     }
@@ -67,7 +66,7 @@ public:
 
     /** @brief 纯力矩控制（N·m） */
     void setTorque(float torque_nm) {
-        setMotorCmd(torque_nm);
+        setCmd(torque_nm);
         ctrl_mode_ = CtrlMode::TORQUE;
     }
 
@@ -79,9 +78,9 @@ public:
      * @param max_torque_nm 最大力矩限制 (N·m)，> 0 时按限制输出
      */
     void setPosVelTqe(float pos_deg, float speed_deg_s, float max_torque_nm) {
-        setMotorDeg(pos_deg);
-        setMotorDegSpeed(speed_deg_s);
-        setMotorCmd(max_torque_nm);
+        setDeg(pos_deg);
+        setDegSpeed(speed_deg_s);
+        setCmd(max_torque_nm);
         ctrl_mode_ = CtrlMode::POS_VEL_TQE;
     }
 

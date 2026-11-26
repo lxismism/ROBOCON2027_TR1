@@ -45,7 +45,6 @@ public:
           feedback_period_us_(feedback_period_us),
           send_div_(send_div == 0U ? 1U : send_div) {
         max_cmd_ = max_cmd;
-        output_type_ = OutputType::NONE;
 
         math_utils::Clamp(kp, 0.0f, static_cast<float>(kKpMax));
         math_utils::Clamp(kd, 0.0f, static_cast<float>(kKdMax));
@@ -73,9 +72,9 @@ public:
                 float kd,
                 float torque = 0.0f,
                 float speed_deg_s = 0.0f) {
-        setMotorDeg(pos_deg);
-        setMotorDegSpeed(speed_deg_s);
-        setMotorCmd(torque);
+        setDeg(pos_deg);
+        setDegSpeed(speed_deg_s);
+        setCmd(torque);
         math_utils::Clamp(kp, 0.0f, static_cast<float>(kKpMax));
         math_utils::Clamp(kd, 0.0f, static_cast<float>(kKdMax));
         kp_ = kp;
