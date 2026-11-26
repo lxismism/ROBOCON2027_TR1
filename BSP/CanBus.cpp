@@ -137,17 +137,19 @@ void CanBus::processRxInterrupt(uint32_t fifo){
     FDCAN_RxHeaderTypeDef rx_header = {0};
     uint8_t data[8] = {0};
 
-    if(HAL_FDCAN_GetRxMessage(&impl_, fifo, &rx_header, data) != HAL_OK){
-        return;
-    }
+    while(HAL_FDCAN_GetRxFifoFillLevel(&impl_, fifo) > 0U){
+        if(HAL_FDCAN_GetRxMessage(&impl_, fifo, &rx_header, data) != HAL_OK){
+            break;
+        }
 
-    const uint8_t len = dlcToByte(rx_header.DataLength);
-    for(uint8_t i = 0; i < kMaxDevice; ++i){
-        if(device_[i] == nullptr) continue;
-        
-        if(device_[i]->matchRx(rx_header)){
-            device_[i]->markRx();
-            device_[i]->onRx(data, len);
+        const uint8_t len = dlcToByte(rx_header.DataLength);
+        for(uint8_t i = 0; i < kMaxDevice; ++i){
+            if(device_[i] == nullptr) continue;
+
+            if(device_[i]->matchRx(rx_header)){
+                device_[i]->markRx();
+                device_[i]->onRx(data, len);
+            }
         }
     }
 

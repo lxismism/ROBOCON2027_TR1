@@ -88,3 +88,29 @@ struct pub_vision_pose{
   uint32_t timestamp_ms;
 };
 
+struct ClawUnitCmd{
+  bool active;       ///< false: 仅上电同步不输出；true: 按目标角度执行
+  float rise_deg;    ///< 抬升电机目标角度 (°)
+  float rotate_deg;  ///< 翻转电机目标角度 (°)
+  float grip_deg;    ///< 夹取电机目标角度 (°)
+};
+
+struct ClawUnitState{
+  bool rise_ready;
+  bool rotate_ready;
+  bool grip_ready;
+  float rise_deg;
+  float rotate_deg;
+  float grip_deg;
+};
+
+struct pub_claw_cmd{
+  ClawUnitCmd claw1; ///< 夹爪1：3508(0x202) + 高擎(ID=1) + 灵足(ID=2)
+  ClawUnitCmd claw2; ///< 夹爪2：3508(0x203) + 2006(0x204) + 达妙(0x06)
+};                   // size: 32 byte (<= TOPICS_MAX_MESSAGE_SIZE 64)
+
+struct pub_claw_state{
+  ClawUnitState claw1;
+  ClawUnitState claw2;
+};                   // size: 32 byte (<= TOPICS_MAX_MESSAGE_SIZE 64)
+

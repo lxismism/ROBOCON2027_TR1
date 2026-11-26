@@ -32,6 +32,8 @@
 #include "MotorBase.hpp"
 #include "djiMotor.hpp"
 #include "vescMotor.hpp"
+#include "htdwLegacyMotor.hpp"
+#include "robstrideMotor.hpp"
 #include "dmMotor.hpp"
 
 #include "topics.hpp"
@@ -138,22 +140,31 @@ osThreadId_t can3Send_TaskHandle;
 
 CanBus fdcan3_bus(hfdcan3);
 
-DM4310Motor wrist_motor(&fdcan3_bus, 0x06, 0x06, DM4310Motor::PosWithSpeed);
-
-C610Motor extend_motor(&fdcan3_bus, 0x202, false, 0x200, false, 
-    MotorBase::OutputType::DEGREE, 36.0f,10000.0f, 0.005f,
-    16.0f, 5.0f, 0.0f, 10000.0f, 10000.0f,
-    Derivative_On_Measurement | INCREATEMENT_OF_OUT, 0.1f,
-    5.0f);
-
-
-C620Motor lift_motor(&fdcan3_bus, 0x201, false, 0x200, false, 
+C620Motor rise_motor(&fdcan3_bus, 0x202, false, 0x200, false, 
     MotorBase::OutputType::DEGREE, 3591.0f / 187.0f,20000.0f, 0.01f,
     400.0f, 5000.0f, 0.0f, 20000.0f, 20000.0f,
     Derivative_On_Measurement | INCREATEMENT_OF_OUT | OutputFilter, 0.1f,
     20.0f, 0.0f, 0.0f, 6000.0f, 6000.0f,
     Derivative_On_Measurement, 1.0f);
 
+HtdwLegacyMotor rotate_motor(&fdcan3_bus, 1, -180.0f, 180.0f, 200.0f, 1U, 5U);
+
+EL05Motor grip_motor(&fdcan3_bus, 2, 0xFDU, 0.0f, 0.0f, 6.0f, -90.0f, 170.0f);
+
+C620Motor rise2_motor(&fdcan3_bus, 0x203, false, 0x200, false,
+    MotorBase::OutputType::DEGREE, 3591.0f / 187.0f, 20000.0f, 0.01f,
+    400.0f, 5000.0f, 0.0f, 20000.0f, 20000.0f,
+    Derivative_On_Measurement | INCREATEMENT_OF_OUT | OutputFilter, 0.1f,
+    20.0f, 0.0f, 0.0f, 6000.0f, 6000.0f,
+    Derivative_On_Measurement, 1.0f);
+
+C610Motor rotate2_motor(&fdcan3_bus, 0x204, false, 0x200, false,
+    MotorBase::OutputType::DEGREE, 36.0f, 10000.0f, 0.005f,
+    16.0f, 5.0f, 0.0f, 10000.0f, 10000.0f,
+    Derivative_On_Measurement | INCREATEMENT_OF_OUT, 0.1f,
+    5.0f);
+
+DM4310Motor grip2_motor(&fdcan3_bus, 0x06, 0x06, DM4310Motor::PosWithSpeed);
 /*-------------------------------------fdcan3----------------------------------------*/
 
 
@@ -231,7 +242,7 @@ uint8_t comServiceInit(){
     canFilterInit(&hfdcan2, FDCAN_STANDARD_ID, 0, 0, FDCAN_FILTER_TO_RXFIFO1, 1);
     bspCanInit(&hfdcan2);
 
-    canFilterInit(&hfdcan3, FDCAN_STANDARD_ID, 0, 0, FDCAN_FILTER_TO_RXFIFO0, 0);
+    canFilterInit(&hfdcan3, FDCAN_EXTENDED_ID, 0, 0, FDCAN_FILTER_TO_RXFIFO0, 0);
     canFilterInit(&hfdcan3, FDCAN_STANDARD_ID, 0, 0, FDCAN_FILTER_TO_RXFIFO1, 1);
     bspCanInit(&hfdcan3);
 
@@ -249,9 +260,12 @@ uint8_t comServiceInit(){
     fdcan2_bus.registerDevice(&chassis_dirmotor3);
     fdcan2_bus.registerDevice(&chassis_dirmotor4); 
     
-    fdcan3_bus.registerDevice(&extend_motor);
-    fdcan3_bus.registerDevice(&wrist_motor);
-    fdcan3_bus.registerDevice(&lift_motor);
+    fdcan3_bus.registerDevice(&rise_motor);
+    fdcan3_bus.registerDevice(&rotate_motor);
+    fdcan3_bus.registerDevice(&grip_motor);
+    fdcan3_bus.registerDevice(&rise2_motor);
+    fdcan3_bus.registerDevice(&grip2_motor);
+    fdcan3_bus.registerDevice(&rotate2_motor);
 
     uart2_rx_semaphore = osSemaphoreNew(1, 0, NULL);
     uart2_port.startRxDmaIdle();
@@ -511,15 +525,19 @@ void can3SendTask(void *argument){
     TickType_t current = xTaskGetTickCount();
 
     for(;;){
-
         {   
-            extend_motor.computeOutput();
-            lift_motor.computeOutput();
+            rise_motor.computeOutput();
+            rise2_motor.computeOutput();
+            rotate2_motor.computeOutput();
 
             uint8_t data[8]{};
-            uint32_t motor_ids[4] = {0x201, 0x202, 0, 0};
-            int16_t commands[4] = {static_cast<int16_t>(lift_motor.cmdTrans()),
-                                   static_cast<int16_t>(extend_motor.cmdTrans()), 0, 0};
+            uint32_t motor_ids[4] = {0x202, 0x203, 0x204, 0};
+            int16_t commands[4] = {
+                static_cast<int16_t>(rise_motor.cmdTrans()),
+                static_cast<int16_t>(rise2_motor.cmdTrans()),
+                static_cast<int16_t>(rotate2_motor.cmdTrans()),
+                0
+            };
             CanBus::ClassicPack pack{};
             pack.type = CanBus::Type::STANDARD;
             pack.dlc = FDCAN_DLC_BYTES_8;
@@ -529,13 +547,33 @@ void can3SendTask(void *argument){
 
             fdcan3_bus.addCanMsg(pack);
         }
-            
+
         {
             CanBus::ClassicPack pack{};
-            pack.dlc = FDCAN_DLC_BYTES_8;
-            pack.id = wrist_motor.getTxID();
+            if(rotate_motor.buildTx(pack.data)){
+                pack.id   = rotate_motor.getTxID();
+                pack.type = rotate_motor.getTxType();
+                pack.dlc  = rotate_motor.getTxDlc();
+                fdcan3_bus.addCanMsg(pack);
+            }
+        }
+
+        {
+            CanBus::ClassicPack pack{};
+            pack.dlc  = FDCAN_DLC_BYTES_8;
+            pack.type = CanBus::Type::EXTENDED;
+            if(grip_motor.buildTx(pack.data)){
+                pack.id = grip_motor.getTxID();
+                fdcan3_bus.addCanMsg(pack);
+            }
+        }
+
+        {
+            CanBus::ClassicPack pack{};
+            pack.dlc  = FDCAN_DLC_BYTES_8;
+            pack.id   = grip2_motor.getTxID();
             pack.type = CanBus::Type::STANDARD;
-            if(wrist_motor.buildTx(pack.data)){
+            if(grip2_motor.buildTx(pack.data)){
                 fdcan3_bus.addCanMsg(pack);
             }
         }

@@ -52,6 +52,28 @@ public:
     bool isEnabled() const { return is_enabled_; }
     uint8_t getModeState() const { return mode_state_; }
     uint8_t getFaultState() const { return fault_state_; }
+    bool isChangingCanId() const { return id_chg_state_ != IdChangeState::IDLE; }
+
+    /**
+     * @brief 修改灵足电机 CAN ID（Stop -> Set_ID -> 可选 Save 到 Flash）
+     * @param old_id      当前电机实际 CAN ID (1~127)
+     * @param new_id      目标新 CAN ID (1~127)
+     * @param save_flash  是否发送 0x16 保存到 Flash（默认 true，断电不丢失）
+     * @return true 已启动修改流程；false 参数无效或正在修改中
+     */
+    bool requestChangeCanId(uint8_t old_id, uint8_t new_id, bool save_flash = true) {
+        if (old_id == 0U || new_id == 0U || old_id > 127U || new_id > 127U ||
+            id_chg_state_ != IdChangeState::IDLE) {
+            return false;
+        }
+        id_chg_old_id_  = old_id;
+        id_chg_new_id_  = new_id;
+        id_chg_save_    = save_flash;
+        id_chg_last_ms_ = 0U;
+        id_chg_state_   = IdChangeState::SEND_STOP;
+        is_enabled_     = false;
+        return true;
+    }
 
     //判断收到的是不是EL05的反馈帧
     bool matchRx(const FDCAN_RxHeaderTypeDef &rx_header)const override {
@@ -99,6 +121,10 @@ public:
     }
 
     bool buildTx(uint8_t data[8]) override {
+        if (id_chg_state_ != IdChangeState::IDLE) {
+            return buildIdChangeTx(data);
+        }
+
         //发送分频：can3SendTask 每 1ms 调一次，每2ms次真正发一帧
         if(++send_cnt_ < kSendDiv){
             return false;
@@ -136,10 +162,21 @@ private:
     static constexpr uint32_t kTypeOperation = 0x01U;  //运控
     static constexpr uint32_t kTypeFeedback  = 0x02U;  //反馈
     static constexpr uint32_t kTypeEnable    = 0x03U;  //使能
+    static constexpr uint32_t kTypeStop      = 0x04U;  //停止
+    static constexpr uint32_t kTypeSetId     = 0x07U;  //修改 CAN ID
+    static constexpr uint32_t kTypeSaveData  = 0x16U;  //保存参数到 Flash
 
     static constexpr uint8_t kModeRun = 2U;
     static constexpr uint32_t kEnableIntervalMs = 20U;
+    static constexpr uint32_t kIdChgIntervalMs  = 30U;
     static constexpr uint8_t kSendDiv = 2U;
+
+    enum class IdChangeState : uint8_t {
+        IDLE = 0,
+        SEND_STOP,
+        SEND_SET_ID,
+        SEND_SAVE
+    };
 
     uint8_t host_id_{0xFDU};  //主机 CAN ID,EL05电机的host_id_都应该用此id
     float kp_{0.0f};
@@ -152,6 +189,12 @@ private:
     uint32_t last_enable_ms_{0U};
     uint8_t send_cnt_{0U};
     mutable uint32_t rx_id_{0U};
+
+    IdChangeState id_chg_state_{IdChangeState::IDLE};
+    uint8_t id_chg_old_id_{1U};
+    uint8_t id_chg_new_id_{1U};
+    bool id_chg_save_{true};
+    uint32_t id_chg_last_ms_{0U};
 
     static uint16_t floatToUint(float x, float x_min, float x_max){
         math_utils::Clamp(x, x_min, x_max);                         
@@ -188,6 +231,46 @@ private:
         data[7] = static_cast<uint8_t>(raw_kd & 0xFFU);
 
         tx_id_ = (kTypeOperation << 24U) | (static_cast<uint32_t>(raw_torque) << 8U) | (id_ & 0xFFUL);
+    }
+
+    bool buildIdChangeTx(uint8_t data[8]){
+        const uint32_t now = HAL_GetTick();
+        if(id_chg_last_ms_ != 0U && (now - id_chg_last_ms_) < kIdChgIntervalMs){
+            return false;
+        }
+        id_chg_last_ms_ = now;
+
+        for(uint8_t i = 0; i < 8U; ++i){
+            data[i] = 0U;
+        }
+
+        switch(id_chg_state_){
+            case IdChangeState::SEND_STOP:
+                tx_id_ = (kTypeStop << 24U) | ((host_id_ & 0xFFUL) << 8U) | id_chg_old_id_;
+                id_chg_state_ = IdChangeState::SEND_SET_ID;
+                return true;
+
+            case IdChangeState::SEND_SET_ID:
+                tx_id_ = (kTypeSetId << 24U) |
+                         (static_cast<uint32_t>(id_chg_new_id_) << 16U) |
+                         ((host_id_ & 0xFFUL) << 8U) |
+                         id_chg_old_id_;
+                id_ = id_chg_new_id_;
+                id_chg_state_ = id_chg_save_ ? IdChangeState::SEND_SAVE : IdChangeState::IDLE;
+                return true;
+
+            case IdChangeState::SEND_SAVE:
+                for(uint8_t i = 0; i < 8U; ++i){
+                    data[i] = static_cast<uint8_t>(i + 1U);
+                }
+                tx_id_ = (kTypeSaveData << 24U) | ((host_id_ & 0xFFUL) << 8U) | id_chg_new_id_;
+                id_chg_state_ = IdChangeState::IDLE;
+                return true;
+
+            case IdChangeState::IDLE:
+            default:
+                return false;
+        }
     }
 
 

@@ -18,6 +18,7 @@
 #include "com_config.h"
 #include "chassis_task.h"
 #include "control_task.h"
+#include "claw_task.hpp"
 
 
 
@@ -31,6 +32,7 @@ extern osThreadId_t can2Send_TaskHandle;
 extern osThreadId_t can3Send_TaskHandle;
 extern osThreadId_t Chassis_TaskHandle;
 extern osThreadId_t Control_TaskHandle;
+extern osThreadId_t Claw_TaskHandle;
 extern osThreadId_t usbProcess_TaskHandle;
 
 
@@ -100,6 +102,13 @@ void osTaskInit(void)
         .priority = (osPriority_t)osPriorityRealtime,
     };
     Control_TaskHandle = osThreadNew(controlTask, NULL, &controlTaskHandle_attributes);
+
+    const osThreadAttr_t clawTaskHandle_attributes = {
+        .name = "Claw_TaskHandle",
+        .stack_size = 256 * 4,
+        .priority = (osPriority_t)osPriorityRealtime,
+    };
+    Claw_TaskHandle = osThreadNew(clawTask, NULL, &clawTaskHandle_attributes);
 
     const osThreadAttr_t usbProcessTaskHandle_attributes = {
         .name = "usbProcess_TaskHandle",
